@@ -1,0 +1,4 @@
+sympy
+ply
+pyyaml
+z3-solver

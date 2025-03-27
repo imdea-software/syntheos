@@ -9,19 +9,28 @@ To install Syntheos, clone this repository and install the required dependencies
 ```sh
  git clone https://github.com/imdea-software/syntheos.git
  cd syntheos
- python3.12 -m venv .venv
- python3.12 -m pip install -r requirements.txt
+ python3 -m venv .venv
+ source .venv/bin/activate
+ python3 -m pip install -r requirements.txt
 ```
 
 Additionally, ensure that the [Strix](https://strix.model.in.tum.de/) tool is in the same folder as Syntheos, as it is required for execution.
 
 ## Usage
 
-To check the realizability of an LTL specification, run the following command:
+To check the realizability of an LTL specification, activate the virtual environment, run the following command:
 
 ```sh
-python3.12 syntheos.py --yaml <yaml_file>
+python3 syntheos.py --yaml <yaml_file>
 ```
+
+Remember to activate the virtual environment with:
+
+```sh
+ source .venv/bin/activate
+```
+
+when you start a new session.
 
 ### YAML File Format
 The YAML file should contain:
@@ -45,5 +54,5 @@ python syntheos.py --yaml spec.yaml
 ```
 
 ## Dependencies
-- Python 3.12
+- Python 3.13
 - Strix (must be placed in the same folder as Syntheos)
