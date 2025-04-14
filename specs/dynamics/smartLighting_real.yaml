@@ -1,0 +1,19 @@
+property: " 
+    X(  
+     G(
+              ([y(ol)-25<=ol] & [ol<=y(ol)+25])
+              )
+              -> 
+            G(
+              ([ol>300] -> [il==0])
+              & ([ol<=300] -> [il==300-ol])
+              & ([il<150] -> X(![il>200]))
+          )
+      )"
+variables:
+  - name: il
+    type: Int
+    owner: system
+  - name: ol
+    type: Int
+    owner: environment

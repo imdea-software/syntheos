@@ -1,0 +1,17 @@
+property: 
+  "X(
+
+            G(
+              ([t>22] -> ([t<=22] R [h<0]))
+              & (([t>18] & [t<22]) -> [h==0])
+              & ([t<18] -> ([t>=18] R [h>0]))
+
+          )
+    )"
+variables:
+  - name: h
+    type: Int
+    owner: system
+  - name: t
+    type: Int
+    owner: environment

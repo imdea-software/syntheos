@@ -1,0 +1,44 @@
+property: "
+    ([target==1000] | [target==-1000])
+    ->
+    ([ex==x] & [edX==dX] & [etX==tX])
+    &
+    (
+      X[x==y(x)]
+      & XG(X[x==y(x)+dX])
+
+      & XG([dX==1] | [dX==-1])
+      & X([dX==1] | [dX==-1])
+      & XG(X[dX==y(dX)])
+
+      & X[tX==y(target)]
+      & XG([tX==1000] | [tX==-1000])
+
+      & F[x<=tX]
+      & F[x>=tX]
+
+    )
+
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: dX
+    type: Int
+    owner: system
+  - name: tX
+    type: Int
+    owner: system
+  - name: target
+    type: Int
+    owner: environment
+  - name: ex
+    type: Int
+    owner: environment
+  - name: edX
+    type: Int
+    owner: environment
+  - name: etX
+    type: Int
+    owner: environment

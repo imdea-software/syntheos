@@ -1,0 +1,34 @@
+property: "
+  (
+     ([ex==0])
+     ->
+     ([ex==x] & [et==t])
+     &
+     (
+       X[t==y(e)]
+       & X(G(X[t==y(t)]))
+       & G(X[x==y(x)+1])
+       & G[x<=t+42]
+     )
+    )
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: t
+    type: Int
+    owner: system
+  - name: e
+    type: Int
+    owner: environment
+  - name: ex
+    type: Int
+    owner: environment
+  - name: et
+    type: Int
+    owner: environment
+#Some invariant like this?
+#X(
+#          G(((x>=0) & G(x>=y(x))) -> F(x>=t))
+#          ) 

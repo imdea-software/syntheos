@@ -1,0 +1,38 @@
+property: "
+  (
+    [emode==0]
+    ->
+    ([emode==mode] & [etemp==temp])
+    &
+    ([mode==0])
+    &
+     G(
+       ([mode==0] | [mode==1] | [mode==-1])
+       & (([mode==-1] & !([temp>=20] & [temp<=25])) -> X[mode==-1])
+       & (([mode==1] & !([temp>=20] & [temp<=25])) -> X[mode==1])
+       & ((([mode==-1] | [mode==1]) & ([temp>=20] & [temp<=25])) -> X[mode==0])
+       & (([mode==0] & !([sense>=20] & [sense<=25])) -> X([mode==1] | [mode==-1]))
+       & (([mode==0] & ([sense>=20] & [sense<=25])) -> X[mode==0])
+       & ([mode==0] -> X[temp==y(sense)])
+       & ([mode==1] -> X[temp==y(temp)+1])
+       & ([mode==-1] -> X[temp==y(temp)-1])
+       & F[mode==0]
+     )
+  )
+  "
+variables:
+  - name: temp
+    type: Int
+    owner: system
+  - name: mode
+    type: Int
+    owner: system
+  - name: sense
+    type: Int
+    owner: environment
+  - name: emode
+    type: Int
+    owner: environment
+  - name: etemp
+    type: Int
+    owner: environment

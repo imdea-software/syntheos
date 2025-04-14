@@ -1,0 +1,19 @@
+property: " 
+    XXX(
+            G(
+              ([p<=y(y(y(p))]) -> X[q>=80])
+              )
+            & G([y(p)-5<p] <-> X[y(y(p))-5 < y(p)])
+            & G([y(y(p))-5<p] <-> X[y(y(y(p)))-5 < y(y(p))])
+              ->
+            G(
+              ([q < 80] -> !(![p==y(p)-5] R ![q>=80]))
+          )
+      )"
+variables:
+  - name: p
+    type: Int
+    owner: system
+  - name: q
+    type: Int
+    owner: environment

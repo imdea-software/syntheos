@@ -1,0 +1,32 @@
+property: "
+  (
+    ([ex==0] & ([first==1] | [first==2]))
+    ->
+    ([ex==x] & [edx==dX])
+    &
+     (
+       X(G([dX==1] | [dX==-1]))
+       & X(G([x>=50] -> (X[x==y(x)-1] & X[dX==-1])))
+       & X(G(X[x<=-50] -> (X[x>=y(x)+1] & X[dX>=1])))
+
+     )
+  )
+  "
+#property is unrealizable even without the last two lines
+#for weak/until conversions, read: https://finkbeiner.groups.cispa.de/teaching/verification-13/downloads/l12final.pdf
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: dX
+    type: Int
+    owner: system
+  - name: first
+    type: Int
+    owner: environment
+  - name: ex
+    type: Int
+    owner: environment
+  - name: edx
+    type: Int
+    owner: environment

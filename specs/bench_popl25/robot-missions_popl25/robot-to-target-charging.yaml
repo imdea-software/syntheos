@@ -1,0 +1,46 @@
+property: "
+  (
+    ([battery==0] & [atStation>0] & ([distToTarget >= 50] & [distToTarget <= 70]))
+    ->
+    ([ebattery==battery] & [eatStation==atStation] & [ecDist==cDist])
+    &
+     (
+       ([atStation>0] & X[cDist==y(distToTarget)] & X[atStation>0] & X[battery==y(battery)])
+       & X([cDist>=50] & [cDist>=70])
+
+       & XG(([atStation>0] & [battery<cDist]) -> ([atStation>0] & X([cDist==y(cDist)] & [battery==y(battery)+1])))
+       & XG(([atStation>0] & [battery<cDist]) -> ((([atStation>0] & X([cDist==y(cDist)] & [battery==y(battery)+1])) | ([atStation<=0] & X([cDist==y(cDist)] & [battery==y(battery)])))))
+
+       & XG((![atStation>0] & ![cDist>=0]) -> ([atStation<=0] & X([cDist==y(cDist)-1] & [battery==y(battery)-1])))
+       & XG((![atStation>0] & [cDist>=0]) -> ([atStation<=0] & X([cDist==y(cDist)] & [battery==y(battery)])))
+
+       & G[battery<=100]
+       & G[battery>=0]
+
+       & F[cDist>=0]
+
+     )
+  )
+  "
+variables:
+  - name: cDist
+    type: Int
+    owner: system
+  - name: battery
+    type: Int
+    owner: system
+  - name: atStation
+    type: Int
+    owner: system
+  - name: distToTarget
+    type: Int
+    owner: environment
+  - name: ecDist
+    type: Int
+    owner: environment
+  - name: ebattery
+    type: Int
+    owner: environment
+  - name: eatStation
+    type: Int
+    owner: environment

@@ -1,0 +1,37 @@
+property: "
+      ([ez>=ex-1] & [ez<=ex+1])
+      ->
+      (
+      [ez==z] & [ex==x]
+      &
+      (
+        G([env_x_move<=1] & [env_x_move>=-1])
+        ->
+        G(
+          [z>=x-2] & [z<=x+2]
+          & X(
+            [x==y(x)+y(env_x_move)]
+            & [z <= y(z)+1]
+            & [z >= y(z)-1])
+        )
+      ))
+  "
+variables:
+  - name: z
+    type: Int
+    owner: system
+  - name: x
+    type: Int
+    owner: system
+  - name: ex
+    type: Int
+    owner: environment
+  - name: ez
+    type: Int
+    owner: environment
+  - name: env_z_move
+    type: Int
+    owner: environment
+  - name: env_x_move
+    type: Int
+    owner: environment

@@ -1,0 +1,37 @@
+property: "
+     ([etarget==0] & [efloor>=1] & [5=efloor])
+     ->
+     ([etarget==target] & [efloor==floor])
+     &
+     (
+        (G([signal>=0] & [5>=signal] & !([target==0] -> [signal==0]))
+        ->
+        (G(
+          [floor >= 1]
+          & [5 >= floor]
+
+          & ([floor == target] -> X[target == 0])
+          & X([floor >= y(floor)] | [floor <= y(floor)])
+
+          )
+        )
+        )
+    )
+  "
+
+variables:
+  - name: floor
+    type: Int
+    owner: system
+  - name: target
+    type: Int
+    owner: system
+  - name: etarget
+    type: Int
+    owner: environment
+  - name: efloor
+    type: Int
+    owner: environment
+  - name: signal
+    type: Int
+    owner: environment

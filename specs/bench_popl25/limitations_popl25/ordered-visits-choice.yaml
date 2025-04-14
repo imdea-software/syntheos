@@ -1,0 +1,31 @@
+property: "
+  (
+    [ex==0]
+    ->
+    ([ex==x] & [edx==dX])
+    &
+     (
+       X(G([dX==1] | [dX==-1]))
+       & (X[x==y(x)] & X([dX==1] | [dX==-1]))
+       & X(G([x>=50] -> ((X[x==y(x)] & (X[dX==y(dX)] | X[dX==y(dX)-50])) | (X[x==y(x)+y(dX)] & X[dX==y(dX)]))))
+       & X(G([x<=-50] -> ((X[x==y(x)] & (X[dX==y(dX)] | X[dX==y(dX)-50])) | (X[x==y(x)+y(dX)] & X[dX==y(dX)]))))
+       & X(G((![x>=50] & ![x<=-50]) -> X([x==y(x)+y(dX)] & [dX==y(dX)])))
+       & F[x>=50]
+       & F[x<=-50]
+       & (!(!(![x<=-50]) R ![x>=50]) | G(![x<=-50]))
+     )
+  )
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: dX
+    type: Int
+    owner: system
+  - name: ex
+    type: Int
+    owner: environment
+  - name: edx
+    type: Int
+    owner: environment

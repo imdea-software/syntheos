@@ -1,0 +1,30 @@
+property: "
+  (
+    ([ex==x] & [ez==z])
+    &
+     (
+       GX([x==(y(x)+y(e))+1] | [x==y(x)-y(e)] | [x==500])
+       & GX(([z==y(z)+y(e)+1] | [z==y(z)-y(e)] | [z==200] | [z==20]))
+       & G[x>=100]
+       & G([x>=0] -> X(G[z>=100]))
+       & G([z>=0] -> F[z>=1000])
+       & X(X(X[z<50]))
+     )
+  )
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: z
+    type: Int
+    owner: system
+  - name: e
+    type: Int
+    owner: environment
+  - name: ex
+    type: Int
+    owner: environment
+  - name: ez
+    type: Int
+    owner: environment

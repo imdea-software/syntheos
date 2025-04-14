@@ -1,0 +1,13 @@
+property: "G(
+              [a==c+10] | [a==c-10] | [a==c+1] | [a==c-1] | [b<a]
+            )"
+variables:
+  - name: a
+    type: Int
+    owner: system
+  - name: b
+    type: Int
+    owner: environment
+  - name: c
+    type: Int
+    owner: environment

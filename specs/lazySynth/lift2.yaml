@@ -1,0 +1,10 @@
+property: "G(
+              [iThree<=100] & [iThree>iFour -iFour*10] & [iThree>=0] & [iThree<=200] & [iFour>=0] & [iFour<=200]
+            )"
+variables:
+  - name: iThree
+    type: Int
+    owner: system
+  - name: iFour
+    type: Int
+    owner: system

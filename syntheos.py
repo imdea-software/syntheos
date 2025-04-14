@@ -10,6 +10,7 @@ from specreader import readfromyaml
 from strixcaller import callstrix
 from ltltparser import ltltparse
 import sys
+import json
 
 sys.setrecursionlimit(10000)
 
@@ -74,17 +75,30 @@ def tmpConsistent(edge, boolizer):
     return False
   return True
 
+def dbgedgeprint(i,nodesn):
+  sys.stdout.write('\r')
+  sys.stdout.write(f"Checking edge {i}/{nodesn}. ")
+  sys.stdout.flush()
+
 def checkconsistencywith(edges, boolizer, consf):
   nodesn = len(edges)
   i = 0
   for edge in edges:
     i = i+1
-    sys.stdout.write('\r')
-    sys.stdout.write(f"Checking edge {i}/{nodesn}. ")
-    sys.stdout.flush()
+    dbg1(lambda: dbgedgeprint(i,nodesn))
     if not consf(edge, boolizer):
       return False
   return True
+
+def writemealy(mealyfname, nodes, specdata):
+  thejson = specdata.copy()
+  thejson["transtab"] = {k:getZ3(v).sexpr() for k,v in nodes[0].edges[0].transtab.items()}
+  thejson["nodes"] = [[{"envplay": ltlt2str(edge.envplay), "sysplay": ltlt2str(edge.sysplay), "outnoden": edge.outnoden} for edge in node.edges] for node in nodes]
+  # convert into JSON:
+  y = json.dumps(thejson)
+  # the result is a JSON string:
+  with open(mealyfname, "w") as f:
+    f.write(y)
 
 def main(args):
   specdata = readfromyaml(args.yaml)
@@ -92,6 +106,7 @@ def main(args):
   variables = specdata["variables"]
   boolizer = Booleanizer(variables)
   boolizer.setformula(ltltparse(specdata["property"], variables))
+  nodes = None
   consistent = False
   while not consistent:
     nodes = callstrix(boolizer, reporter, args.strixmaxsecs)
@@ -100,6 +115,10 @@ def main(args):
     consistent = checkconsistencywith(edges, boolizer, thConsistent) and (boolizer.maxfetchdepth == 0 or boolizer.realizable or checkconsistencywith(edges, boolizer, tmpConsistent))
     # consistent = all(thConsistent(edge, boolizer) for edge in edges) and (boolizer.maxfetchdepth == 0 or boolizer.realizable or all(tmpConsistent(edge, boolizer) for edge in edges))
   print("Done. The property is %s." % ("realizable" if boolizer.realizable else "unrealizable"))
+  if args.save_mealy is not None:
+    mealyfname = args.save_mealy if args.save_mealy != "" else (specdata["name"] + ".json")
+    dbg1("Writing mealy to " + mealyfname)
+    writemealy(mealyfname, nodes, specdata)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser('LTL fetch')
@@ -107,6 +126,7 @@ if __name__ == '__main__':
   parser.add_argument('--strixmaxsecs', help='Maximum seconds', type=int, default=None)
   parser.add_argument('--reportdir', help='Reports root dir', type=str, default="")
   parser.add_argument('--profile', help='Write profile info to file', type=str, default="")
+  parser.add_argument('--save-mealy', nargs="?", const="", help='Save mealy machine to file', type=str, default=None)
   args = parser.parse_args()
   if args.profile == "":
     main(args)

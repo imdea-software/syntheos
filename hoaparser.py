@@ -24,46 +24,28 @@ def push_negation(expr):
   else:
     return expr
 
-def models(val, expr):
-  for k,v in val.items():
-    expr = substitute(expr, (Int(k), IntVal(v)))
-  s = Solver()
-  s.add(expr)
-  ret = s.check() == sat
-  return ret
-
-def getResponse(val, expr):
-  for k,v in val.items():
-    expr = substitute(expr, (Int(k), IntVal(v)))
-  s = Solver()
-  s.add(expr)
-  s.check()
-  return s.model()
-
-class MealyAutomata:
-  def __init__(self, node):
-    self.node = node
-
-  def react(self, envval):
-    for edge in self.node.edges:
-      if models(envval, ltlt2z3(edge.getEnvPlay())):
-        self.node = edge.outnode
-        return getResponse(envval, ltlt2z3(edge.getSysResponse()))
-
 def simply(cond, transtab):
   return ltlt2z3(replaceliterals(cond, transtab))
 
 class Edge:
-  def __init__(self, condition, outnode, transtab):
-    self.plays = condition["operators"]
+  def __init__(self, envplay, sysplay, outnode, outnoden, transtab):
+    self.envplay = envplay
+    self.sysplay = sysplay
+    self.envplayz3 = None
+    self.sysplayz3 = None
     self.transtab = transtab
     self.outnode = outnode
+    self.outnoden = outnoden
 
   def getEnvPlay(self):
-    return simply(self.plays[0], self.transtab)
+    if self.envplayz3 is None:
+      self.envplayz3 = simply(self.envplay, self.transtab)
+    return self.envplayz3
 
   def getSysResponse(self):
-    return simply(self.plays[1], self.transtab)
+    if self.sysplayz3 is None:
+      self.sysplayz3 = simply(self.sysplay, self.transtab)
+    return self.sysplayz3
 
 class Node:
   def __init__(self, name):
@@ -94,9 +76,9 @@ def parseprefix(txtstrm, littable):
 
 def processEdge(line, currentnode, nodes, transtab):
   condstr,outnodestr = line[1:].split("] ")
-  outnode = int(outnodestr)
-  condition = boolparse(condstr)
-  e = Edge(condition, nodes[outnode], transtab)
+  outnoden = int(outnodestr)
+  plays = boolparse(condstr)["operators"]
+  e = Edge(plays[0], plays[1], nodes[outnoden], outnoden, transtab)
   nodes[currentnode].addEdge(e)
 
 def nodes2dot(nodes):

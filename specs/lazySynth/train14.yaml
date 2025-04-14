@@ -1,0 +1,41 @@
+property: "G(
+              ([inOne > 1] | [inOne<= frac*2]) & ([inOne>=0] & [inOne<=200])
+            )
+            &
+            G(
+              [vTen==100] & [vSix==100]
+            )
+            &
+            G(
+              [vSeven==100] | [vSeven==100*frac] | [vSeven==2*dfrac]
+            )
+            &
+            G(
+              [vTwo==1]
+            )
+            "
+variables:
+  - name: frac
+    type: Int
+    owner: system
+  - name: inOne
+    type: Int
+    owner: environment
+  - name: vSix
+    type: Int
+    owner: system
+  - name: vTen
+    type: Int
+    owner: system
+  - name: vSeven
+    type: Int
+    owner: system
+  - name: frac
+    type: Int
+    owner: system
+  - name: dfrac
+    type: Int
+    owner: system
+  - name: vTwo
+    type: Int
+    owner: system

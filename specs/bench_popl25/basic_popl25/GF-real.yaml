@@ -1,0 +1,21 @@
+property: "
+  (
+    [ex==x]
+    &
+     (
+       X[x==y(e)]
+       & X(G(X[x==y(x)+1]))
+       & G(F[x>10000])
+     )
+  )
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: e
+    type: Int
+    owner: environment
+  - name: ex
+    type: Int
+    owner: environment

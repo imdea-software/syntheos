@@ -1,0 +1,52 @@
+property: "
+(![ex==exe] & ![ez==eze])
+->
+([ex==x] & [ez==z] & [exe==xe] & [eze==ze])
+& (
+  G(
+    ([env_x_move==1] | [env_x_move==-1] | [env_x_move==0])
+    & ([env_z_move==1] | [env_z_move==-1] | [env_z_move==0])
+  )
+  ->
+  G(
+    (![x==xe] & ![z==ze])
+    & X(
+    ([x == y(x)] | [x == (y(x)+1)] | [x == y(x)-1])
+    & ([z == y(z)] | [z == (y(z)+1)] | [z == y(z)-1])
+    & [xe == y(xe) + y(env_x_move)]
+    & [ze == y(ze) + y(env_z_move)])
+  )
+)
+  "
+
+variables:
+  - name: z
+    type: Int
+    owner: system
+  - name: x
+    type: Int
+    owner: system
+  - name: ze
+    type: Int
+    owner: system
+  - name: xe
+    type: Int
+    owner: system
+  - name: ex
+    type: Int
+    owner: environment
+  - name: ez
+    type: Int
+    owner: environment
+  - name: exe
+    type: Int
+    owner: environment
+  - name: eze
+    type: Int
+    owner: environment
+  - name: env_z_move
+    type: Int
+    owner: environment
+  - name: env_x_move
+    type: Int
+    owner: environment

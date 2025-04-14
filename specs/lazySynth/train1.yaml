@@ -1,0 +1,11 @@
+property: "G(
+              ([inOne > 1] | [inOne<= frac*2]) & ([inOne>=0] & [inOne<=200])
+            )
+            "
+variables:
+  - name: frac
+    type: Int
+    owner: system
+  - name: inOne
+    type: Int
+    owner: environment

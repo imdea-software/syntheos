@@ -1,0 +1,34 @@
+property: "G(
+              [vFourteen>vTwelve] & [vThirtheen > vTwelve] & ([vTwelve>0] | [vTwelve<frac*dfrac])
+              & [vFifteen > 10] & [vFifteen == vThirtheen] & [vThirtheen==0]
+              & [vTwelve > vFifteen] & [vFourteen == vFifteen] & [vTwelve>=0]
+              & ![vFourteen == vTwelve] & [vThirtheen*frac>vTwelve]
+            )"
+variables:
+  - name: vFourteen
+    type: Int
+    owner: system
+  - name: vThirtheen
+    type: Int
+    owner: system
+  - name: vFifteen
+    type: Int
+    owner: system
+  - name: vTwelve
+    type: Int
+    owner: system
+  - name: frac
+    type: Int
+    owner: system
+  - name: dfrac
+    type: Int
+    owner: system
+  - name: inSeven
+    type: Int
+    owner: environment
+  - name: inEleven
+    type: Int
+    owner: environment
+  - name: inTen
+    type: Int
+    owner: environment

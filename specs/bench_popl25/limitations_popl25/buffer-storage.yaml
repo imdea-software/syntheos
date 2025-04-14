@@ -1,0 +1,40 @@
+property: "
+     (![processE>0] & [enumE==0] & [ebuffE==0])
+     ->
+     ([enumE==numE] & [ebuffE==buffE] & [eprocessE==processE])
+     &
+     (
+       G((![processE>0] & ![done>0] & ![buffE>=128]) -> ((X([buffE==y(buffE)+1] & [numE==y(numE)]) | X([buffE==0] & [numE==y(numE)+y(buffE)])) & X[processE==y(processE)]))
+       & G((![processE>0] & ![done>0] & [buffE>=128]) -> ((X([buffE==0] & [numE==y(numE)+y(buffE)])) & X[processE==y(processE)]))
+       & G((![processE>0] & [done>0] & [buffE>=64]) -> ((X([buffE==0] & [numE==y(numE)+y(buffE)])) & X[processE==y(done)]))
+       & G((![processE>0] & [done>0] & [buffE<64]) -> (X[buffE==y(buffE)] & X[numE==y(numE)] & X[processE==y(done)]))
+       & G([processE>0] -> (X[buffE==y(buffE)]))
+       & G(([processE>0] & [numE>64]) -> X([numE==y(numE)-1] & [processE==y(processE)]))
+       & G(([processE>0] & [numE<64]) -> X([numE==y(numE)] & [processE==y(processE)]))
+       & G(([processE>0] & ![numE<64] & ![numE>64]) -> X([numE==0] & [processE<=0]))
+       & G([processE>0] -> F[numE==0])
+
+     )
+  "
+variables:
+  - name: numE
+    type: Int
+    owner: system
+  - name: buffE
+    type: Int
+    owner: system
+  - name: processE
+    type: Int
+    owner: system
+  - name: done
+    type: Int
+    owner: environment
+  - name: enumE
+    type: Int
+    owner: environment
+  - name: ebuffE
+    type: Int
+    owner: environment
+  - name: eprocessE
+    type: Int
+    owner: environment

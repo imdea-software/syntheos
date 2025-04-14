@@ -3,8 +3,9 @@ import traceback
 from z3 import *
 import sympy
 from functools import reduce
+import re
 
-dbglevel = 2
+dbglevel = 0
 def dbg1(s):
   dbg(s,1)
 def dbg2(s):
@@ -78,9 +79,9 @@ def z3getvars(e):
 def ltlt2str(f):
   if isBoolSym(f):
     if isBoolSymTrue(f):
-      return "true"
+      return "t"
     if isBoolSymFalse(f):
-      return "false"
+      return "f"
     return symbol(f)
   if isZ3(f):
     return "[" + str(getZ3(f)) + "]"
@@ -150,16 +151,16 @@ def getliterals(formula):
   return reduce(lambda x,y: x + getliterals(y), formula["operators"], [])
 
 def isBoolSym(formula):
- return formula["kind"] == "BOOLSYM"
+  return formula["kind"] == "BOOLSYM"
 
 def isBoolSymTrue(formula):
- return isBoolSym(formula) and symbol(formula) == "t"
+  return isBoolSym(formula) and symbol(formula) == "t"
 
 def isBoolSymFalse(formula):
- return isBoolSym(formula) and symbol(formula) == "f"
+  return isBoolSym(formula) and symbol(formula) == "f"
 
 def isZ3(formula):
- return formula["kind"] == "Z3"
+  return formula["kind"] == "Z3"
 
 def ltl2sympy(formula):
   if isBoolSym(formula):
@@ -231,3 +232,21 @@ def z32ltlt(f):
   if is_quantifier:
     return ltlZ3(f)
   error("Unhandled case:" + str(f))
+
+def getz3vars(das, variables):
+  varstable = {v["name"]:v["type"] for v in variables}
+  def makevar(x):
+    orix = x
+    while x.startswith("FETCH_"):
+      x = x[6:]
+    match varstable[x]:
+      case "Int":
+        cons = Int
+      case "Real":
+        cons = Real
+      case _:
+        error("Unhandled type: " + varstable[x])
+    return cons(orix)
+  idregex = r"\b[a-zA-Z][a-zA-Z0-9_]*\b"
+  identifiers = re.findall(idregex, das)
+  return {key: makevar(key) for key in identifiers}

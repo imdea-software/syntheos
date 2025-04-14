@@ -1,0 +1,7 @@
+property: "G(
+              [vTwo==1]
+            )"
+variables:
+  - name: vTwo
+    type: Int
+    owner: system

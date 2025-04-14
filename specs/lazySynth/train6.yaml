@@ -1,0 +1,22 @@
+property: "(G(
+              ([inTen>=0] & [inSeven<=100]) & ([inEleven>=0] & [inEleven<=100])
+            )
+            -> G(
+              ([vFour==inTen] | [vFour==1]) & ([vFive==inEleven] | [vFive==1])
+            ))"
+variables:
+  - name: vFour
+    type: Int
+    owner: system
+  - name: vFive
+    type: Int
+    owner: environment
+  - name: inTen
+    type: Int
+    owner: environment
+  - name: inSeven
+    type: Int
+    owner: environment
+  - name: inEleven
+    type: Int
+    owner: environment

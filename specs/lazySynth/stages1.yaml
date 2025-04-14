@@ -1,0 +1,37 @@
+property: "(G(
+              [a>b+100] & [a<=200] & [a>c-c*frac]
+            )
+            -> G(
+              [d<200] & [e>1] & [v>1] & [w>1] & [z>1]
+            ))"
+variables:
+  - name: e
+    type: Int
+    owner: system
+  - name: w
+    type: Int
+    owner: system
+  - name: z
+    type: Int
+    owner: system
+  - name: s
+    type: Int
+    owner: system
+  - name: a
+    type: Int
+    owner: environment
+  - name: b
+    type: Int
+    owner: environment
+  - name: c
+    type: Int
+    owner: environment
+  - name: frac
+    type: Int
+    owner: environment
+  - name: v
+    type: Int
+    owner: environment
+  - name: d
+    type: Int
+    owner: environment

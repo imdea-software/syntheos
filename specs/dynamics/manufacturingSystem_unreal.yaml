@@ -1,0 +1,14 @@
+property: " 
+    XXX(
+
+            G(
+              ([q < 80] -> !(![p==y(p)-5] R ![q>=80]))
+          )
+      )"
+variables:
+  - name: p
+    type: Int
+    owner: system
+  - name: q
+    type: Int
+    owner: environment

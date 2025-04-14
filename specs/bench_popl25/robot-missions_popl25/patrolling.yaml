@@ -1,0 +1,34 @@
+property: "
+  (
+    ([epos==0] & [etimer==0])
+    ->
+    ([epos==pos] & [etimer==timer])
+    &
+     (
+       G([pos==0] | [pos==1] | [pos==2])
+       & G([pos==0] -> X([pos==0] | [pos==1] | [pos==2]))
+       & G([pos==1] -> X[pos==0])
+       & G([pos==2] -> X[pos==0])
+       & G(([pos==0] & ![timer>=60]) -> X[pos==0])
+       & G(([pos==0] & [timer>=60]) -> X([pos==1] | [pos==2]))
+       & G[timer>=0]
+       & G([pos==0] -> X[timer==y(timer)+1])
+       & G(![pos==0] -> X[timer==0])
+       & G(F[pos>0])
+
+     )
+  )
+  "
+variables:
+  - name: pos
+    type: Int
+    owner: system
+  - name: timer
+    type: Int
+    owner: system
+  - name: epos
+    type: Int
+    owner: environment
+  - name: etimer
+    type: Int
+    owner: environment

@@ -1,0 +1,7 @@
+property: "G(
+              ![iOne==1] & ([iOne>=0] & [iOne<=3])
+            )"
+variables:
+  - name: iOne
+    type: Int
+    owner: environment

@@ -1,0 +1,26 @@
+property: "
+([ex<=3] & [ex>=0]) 
+->
+([ex==x] & [ez==z]
+&
+G(
+[x<=3] & [x>=0] 
+& X(
+[x <= y(x)+y(x)+1] & [x >= y(x)+y(x)-1] &
+[z <= y(z)+y(z)+1] & [z >= y(z)+y(z)-1])
+)
+)
+  "
+variables:
+  - name: z
+    type: Int
+    owner: system
+  - name: x
+    type: Int
+    owner: system
+  - name: ex
+    type: Int
+    owner: environment
+  - name: ez
+    type: Int
+    owner: environment

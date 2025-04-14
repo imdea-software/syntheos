@@ -1,0 +1,24 @@
+property: "(G(
+              ![inSeven==0] & ![inEight==0] & [inEight-inSeven>20] & [inSeven>=-1] & [inSeven<=50] & [inEight>=-1] & [inEight<=50]
+            )
+            -> G(
+              [vEight == inEight + inSeven]
+            ))"
+variables:
+  - name: vEight
+    type: Int
+    owner: system
+  - name: inEight
+    type: Int
+    owner: environment
+  - name: inSeven
+    type: Int
+    owner: environment
+
+#"(G(
+#              ![inSeven==0] & ![inEight==0] & [inEight-inSeven>20] & [inSeven>=-1] & [inSeven<=50] & [inEight>=-1] & [inEight<=50]
+#            )
+#            -> G(
+#              [vEight == inEight * inSeven]
+#            ))"
+

@@ -1,0 +1,7 @@
+property: "G(
+              ([iZero==0] | [iZero==4]) & ([iZero>=0] & [iZero<=4])
+            )"
+variables:
+  - name: iZero
+    type: Int
+    owner: environment

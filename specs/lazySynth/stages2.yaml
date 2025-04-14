@@ -1,0 +1,14 @@
+property: "G(
+              ([d>=100] -> [a==c-d])
+              & ([d>24] -> ((![a==25] & [a==c]) & [a<50]))
+            )"
+variables:
+  - name: a
+    type: Int
+    owner: system
+  - name: c
+    type: Int
+    owner: environment
+  - name: d
+    type: Int
+    owner: environment

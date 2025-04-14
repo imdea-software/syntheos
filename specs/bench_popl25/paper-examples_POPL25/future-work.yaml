@@ -1,0 +1,14 @@
+property: "
+  [ex==x]
+  &
+  G(X[x>y(x)])
+  &
+  F[x<0]
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: ex
+    type: Int
+    owner: environment

@@ -1,0 +1,43 @@
+property: "
+  (
+    ([charge==60] & [x==0])
+    ->
+    ([ex==x] & [edx==dX] & [echarge==charge])
+    &
+     (
+       X(G([dX==1] | [dX==-1]))
+
+       & (X([x==y(x)] & [charge==y(charge)]) & (X[dX==1] | X[dX==-1]))
+
+       & X(G([x>=50] -> (X([x==y(x)-1] & [dX==-1]) | (X([x==y(x)] & [charge==y(charge)+1]) & X[dX==y(dX)]))))
+
+       & X(G([x<=-70] -> (X([x==y(x)+1] & [dX==1]) | (X([x==y(x)] & [charge==y(charge)+1]) & X[dX==y(dX)]))))
+
+       & X(G((![x>=50] & ![x<=-70]) -> (X([x==y(x)+y(dX)] & [charge==y(charge)-1]) & X[dX==y(dX)])))
+
+       & G([charge>=0] & [charge<=150])
+
+       & F[x>=50]
+       & F[x<=-70]
+     )
+  )
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: dX
+    type: Int
+    owner: system
+  - name: charge
+    type: Int
+    owner: system
+  - name: ex
+    type: Int
+    owner: environment
+  - name: edx
+    type: Int
+    owner: environment
+  - name: echarge
+    type: Int
+    owner: environment

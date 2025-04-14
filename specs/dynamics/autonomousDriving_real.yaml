@@ -1,0 +1,12 @@
+property: "
+                X(G[e<y(e)] -> 
+                    G(
+                      ([e<=0] -> X[s>=e]) & ([e>0] -> [s<e]))
+                      )"
+variables:
+  - name: s
+    type: Int
+    owner: system
+  - name: e
+    type: Int
+    owner: environment

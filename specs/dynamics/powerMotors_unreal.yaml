@@ -1,0 +1,19 @@
+property: "
+  X(
+            G(
+              ([w >= 3500] -> [inner==w])
+              & ([w == 0] -> X[inner==0])
+
+          )
+  )"
+variables:
+  - name: inner
+    type: Int
+    owner: system
+  - name: w
+    type: Int
+    owner: environment
+
+              #& (((w <= 1500) & (w < 2500)) -> XX(inner==((w*w)*w)))
+              #& (((w <= 500) & (w < 1500)) -> XX(inner==(w*w)))
+              #& (((w < 0) & (w < 500)) -> XX(inner==w))

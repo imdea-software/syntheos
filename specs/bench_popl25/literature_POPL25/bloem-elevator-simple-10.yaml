@@ -1,0 +1,31 @@
+property: "
+     ([ec_floor>=1] & [10>=ec_floor])
+     ->
+     (
+     [ec_floor==c_floor]
+     &
+     (G(
+       [c_floor >= 1]
+       & [10 >= c_floor]
+       & X([c_floor == y(c_floor)] | [c_floor == y(c_floor)+1] | [c_floor == y(c_floor)-1])
+       & F[c_floor == 1]
+       & F[c_floor == 2]
+       & F[c_floor == 3]
+       & F[c_floor == 4]
+       & F[c_floor == 5]
+       & F[c_floor == 6]
+       & F[c_floor == 7]
+       & F[c_floor == 8]
+       & F[c_floor == 9]
+       & F[c_floor == 10]
+     )
+     )
+     )
+  "
+variables:
+  - name: c_floor
+    type: Int
+    owner: system
+  - name: ec_floor
+    type: Int
+    owner: environment

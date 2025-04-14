@@ -1,0 +1,13 @@
+property: "G(
+              [vSeven==100] | [vSeven==100*frac] | [vSeven==2*dfrac]
+            )"
+variables:
+  - name: vSeven
+    type: Int
+    owner: system
+  - name: frac
+    type: Int
+    owner: system
+  - name: dfrac
+    type: Int
+    owner: system

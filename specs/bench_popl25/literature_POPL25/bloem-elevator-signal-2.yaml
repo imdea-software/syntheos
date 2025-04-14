@@ -1,0 +1,43 @@
+property: "
+     ([etarget==0] & [efloor>=1] & [2>=efloor])
+     ->
+     ([etarget==target] & [efloor==floor])
+     &
+     (
+        (G([signal>=0] & [2>=signal] & !([target==0] -> [signal==0]))
+        ->
+        (G(
+          [floor >= 1]
+          & [3 >= floor]
+          & X(![signal==0] & ![floor==target] -> X[target == y(signal)])
+          & X([signal==0] & ![floor==target] -> X[target == y(target)])
+          & ([floor == target] -> X[target == 0])
+          & X([floor == y(floor)] | [floor == y(floor)+1] | [floor == y(floor) -1])
+          & ([target == 1] -> F[floor == 1])
+          & ([target == 2] -> F[floor == 2])
+          )
+        )
+        )
+    )
+  "
+sysvars:
+  - target
+  - floor
+fetchcontrol: environment
+autotmptautos: true
+variables:
+  - name: floor
+    type: Int
+    owner: system
+  - name: target
+    type: Int
+    owner: system
+  - name: etarget
+    type: Int
+    owner: environment
+  - name: efloor
+    type: Int
+    owner: environment
+  - name: signal
+    type: Int
+    owner: environment

@@ -1,0 +1,31 @@
+property: "G(
+              [v>=0] & [v<=5] & ([v==0] | [v==1] | [v==2] | [v==3] | [v==4] | [v==5])
+            )
+            &
+          G(
+              [iThree<=100] & [iThree>iFour -iFour*10] & [iThree>=0] & [iThree<=200] & [iFour>=0] & [iFour<=200]
+            )
+          &
+        G(
+              ([iZero==0] | [iZero==4]) & ([iZero>=0] & [iZero<=4])
+            )
+          &
+        G(
+              ![iOne==1] & ([iOne>=0] & [iOne<=3])
+            )"
+variables:
+  - name: v
+    type: Int
+    owner: system
+  - name: iThree
+    type: Int
+    owner: system
+  - name: iFour
+    type: Int
+    owner: system
+  - name: iZero
+    type: Int
+    owner: environment
+  - name: iOne
+    type: Int
+    owner: environment

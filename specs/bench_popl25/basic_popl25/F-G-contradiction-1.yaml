@@ -1,0 +1,19 @@
+property: "
+  (
+     [ex==x]
+     &
+     (
+       G(X([x==y(x)+1] | [x==y(x)+(-1)]) | [x==10])
+       & X[x==10]
+       & X([x>=5] -> X(G[x>=11]))
+       & X(F[x<=((-1)*1000)])
+     )
+  )
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: ex
+    type: Int
+    owner: environment

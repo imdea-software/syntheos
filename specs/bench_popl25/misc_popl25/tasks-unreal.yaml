@@ -1,0 +1,46 @@
+property: "
+    ([x==10] & [z==20] & [done==0])
+    ->
+    ([ex==x] & [ez==z] & [edone==done])
+    &
+    (
+      F([x==0] | [z==1])
+
+      & F(![done==0] & ([x>=20] | [z>=20]))
+
+      & G(([done==0] & ![z==0]) -> X([x==y(x)] | [x==y(x)-1]))
+      & G(([done==0] & [z==0]) -> X[x==0])
+      & G((![done==0] & ![x==0]) -> X[x==y(x)+1])
+      & G((![done==0] & [x==0]) -> X[x==y(x)])
+
+      & G(([done==0] & ![z==0]) -> X([z==y(z)] | [z==y(z)-1]))
+      & G(([done==0] & [z==0]) -> X[z==0])
+      & G((![done==0] & [z==0]) -> X[z==y(z)])
+
+      & G(([done==0] & ([x==0] | [z==0])) -> X[done==1])
+      & G(([done==0] & !([x==0] | [z==0])) -> X[done==y(done)])
+      & G((![done==0]) -> X[done==y(done)])
+
+
+    )
+
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: z
+    type: Int
+    owner: system
+  - name: done
+    type: Int
+    owner: system
+  - name: ex
+    type: Int
+    owner: environment
+  - name: ez
+    type: Int
+    owner: environment
+  - name: edone
+    type: Int
+    owner: environment

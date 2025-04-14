@@ -1,0 +1,25 @@
+property: "
+  (
+    [ex==0]
+    ->
+    ([ex==x] & [edx==dX])
+    &
+     (
+       X(G([x>=50] -> ((X[x>=y(x)] & (X[dX>=y(dX)] | X[dX==y(dX)-50])) | (X[x==y(x)+y(dX)] & X[dX==y(dX)]))))
+
+     )
+  )
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: dX
+    type: Int
+    owner: system
+  - name: ex
+    type: Int
+    owner: environment
+  - name: edx
+    type: Int
+    owner: environment

@@ -1,0 +1,31 @@
+property: "
+  (
+     ([enumE==0] & !(![eprocess==1]))
+     ->
+     ([enumE==numE] & [eprocess==process])
+     &
+     (
+       G[numE>=1]
+       & G([process==0] | [process==1])
+       & G([numE<=0] -> (X[numE==y(numE)+1] & X([process==0] | [process==1])))
+       & G((![numE<=0] & !(![process==1])) -> (X[numE==y(numE)+1] & X([process==0] | [process==1])))
+       & G((![numE<=0] & ![process==1] & [numE>64]) -> X([numE == y(numE)-1] & [process==y(process)]))
+       & G((![numE<=0] & ![process==1] & [numE<64]) -> X([numE == y(numE)] & [process==y(process)])) 
+       & G((![numE<=0] & ![process==1] & ![numE<64] & ![numE>64]) -> X([numE == 0] & [process==0])) 
+       & G(F[numE<=0])
+     )
+    )
+  "
+variables:
+  - name: numE
+    type: Int
+    owner: system
+  - name: process
+    type: Int
+    owner: system
+  - name: enumE
+    type: Int
+    owner: environment
+  - name: eprocess
+    type: Int
+    owner: environment

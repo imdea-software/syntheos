@@ -1,0 +1,22 @@
+property: "
+     ([e>0] -> [x==0]
+          &
+     (
+      X[x==0] 
+      & X(X(G([x == y(x)+1] | [x == y(x)+y(z)])))
+      & F[x <= -10000]
+      & X[z == y(e)]
+      & X(X(G[z == y(z)]))
+      & X[z>0]
+    ))
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: z
+    type: Int
+    owner: system
+  - name: e
+    type: Int
+    owner: environment

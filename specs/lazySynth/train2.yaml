@@ -1,0 +1,10 @@
+property: "G(
+              [vTen==100] & [vSix==100]
+            )"
+variables:
+  - name: vSix
+    type: Int
+    owner: system
+  - name: vTen
+    type: Int
+    owner: system

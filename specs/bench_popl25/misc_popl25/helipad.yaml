@@ -1,0 +1,54 @@
+property: "
+    ([efree==free] & [eack==ack] & [eevacTimer==evacTimer])
+    &
+    G(
+      (([free>0] & [land>0]) -> ((X[free<=0]) W ([depart>0] | ([evacTimer<=0] & [emergency>0]))))
+      & (([depart>0] | ([evacTimer<=0] & [emergency>0])) -> (((X[free>0]) W [land>0])))
+      & ([emergency<=0] -> X[evacTimer==-1])
+      & (([emergency>0] & [evacTimer>0]) -> X[evacTimer==y(evacTimer)-1])
+      & (([emergency>0] & [evacTimer<=0]) -> X[evacTimer==y(evacTimer)])
+      & ([emergency>0] -> F[evacTimer<=0])
+      & ((X[ack==0] & [rOne>0] & [rTwo<=0]) -> (X[ack==1] W ([land>0] | [emergency>0])))
+      & ((X[ack==0] & [rOne<=0] & [rTwo>0]) -> (X[ack==2] W ([land>0] | [emergency>0])))
+      & ([emergency>0] -> X[ack==0])
+
+    )
+
+  "
+variables:
+  - name: free
+    type: Int
+    owner: system
+  - name: ack
+    type: Int
+    owner: system
+  - name: evacTimer
+    type: Int
+    owner: system
+  - name: efree
+    type: Int
+    owner: environment
+  - name: eack
+    type: Int
+    owner: environment
+  - name: eevacTimer
+    type: Int
+    owner: environment
+  - name: land
+    type: Int
+    owner: environment
+  - name: depart
+    type: Int
+    owner: environment
+  - name: rOne
+    type: Int
+    owner: environment
+  - name: rTwo
+    type: Int
+    owner: environment
+  - name: emergency
+    type: Int
+    owner: environment
+  - name: evacTime
+    type: Int
+    owner: environment

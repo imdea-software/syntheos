@@ -1,0 +1,61 @@
+property: "
+    ([ex==x] & [etx==tx] & [edeliver==deliver] & [ehasPackage==hasPackage] & [emode==mode])
+    &
+    (
+      G(([deliver>0] & [x<tx]) -> X[x==y(x)+1])
+      & G(([deliver>0] & [x>tx]) -> X[x==y(x)-1])
+      & G(([deliver>0] & [x==tx]) -> X[x==y(x)])
+      & G(([deliver>0] & [x==tx]) -> X[deliver<=0])
+      & G(([deliver>0] & ![x==tx]) -> X[deliver>0])
+      & G([deliver>0] -> F[x==tx])
+      & X([mode==0] | [mode==1])
+      & G([deliver>0] -> X[hasPackage==y(hasPackage)])
+      & G([deliver>0] -> X[tx==y(tx)])
+      & G(([mode==0] & ![deliver>0]) -> (X[deliver>0] & X[tx==y(customerPos)] & X([mode==0] | [mode==1])))
+      & G(([mode==1] & ![deliver>0]) -> (X[deliver>0] & X[tx==y(stationPos)] & X[mode==1]))
+      & G(([mode==0] & ![deliver>0]) -> ([hasPackage>0] & X[hasPackage<=0]))
+      & G(([mode==1] & ![deliver>0]) -> (X[hasPackage>0]))
+
+
+
+
+    )
+
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: tx
+    type: Int
+    owner: system
+  - name: deliver
+    type: Int
+    owner: system
+  - name: hasPackage
+    type: Int
+    owner: system
+  - name: mode
+    type: Int
+    owner: system
+  - name: customerPos
+    type: Int
+    owner: environment
+  - name: stationPos
+    type: Int
+    owner: environment
+  - name: ex
+    type: Int
+    owner: environment
+  - name: etx
+    type: Int
+    owner: environment
+  - name: edeliver
+    type: Int
+    owner: environment
+  - name: ehasPackage
+    type: Int
+    owner: environment
+  - name: emode
+    type: Int
+    owner: environment

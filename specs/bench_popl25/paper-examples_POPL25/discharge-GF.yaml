@@ -1,0 +1,27 @@
+property: "
+     [ex==x] & [ec==c]
+     &
+     (
+      G(X[c==0] | X[c==1]) 
+      & G([c==0] -> X[x==y(x)+1]) 
+      & G(![c==0] -> X[x==10000])
+      & G(X[c==1] -> [e==1]) 
+      & G(F[x>=10000])
+    )
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: c
+    type: Int
+    owner: system
+  - name: e
+    type: Int
+    owner: environment
+  - name: ex
+    type: Int
+    owner: environment
+  - name: ec
+    type: Int
+    owner: environment

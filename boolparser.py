@@ -18,7 +18,7 @@ def t_NUMBER(t):
 t_ignore = " "
 
 def t_error(t):
-    print("Illegal character '%s'" % t.value[0])
+    error("Illegal character '%s'" % t.value[0])
     t.lexer.skip(1)
 
 lexer = lex.lex()
@@ -61,7 +61,7 @@ def p_error(p):
     else:
         print("Syntax error at EOF")
 
-parser = yacc.yacc()
+parser = yacc.yacc(debug=0)
 
 def boolparse(s):
   return parser.parse(s, lexer=lexer)

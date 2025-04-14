@@ -1,0 +1,27 @@
+property: "
+     ([ex==x] & [ez==z])
+     &
+     (
+      G([z>0] -> X[x==y(z)])
+      & G(![z>0] -> X[x==y(x)+y(z)-1])
+      & G([e>10000] -> X[z == y(e)])
+      & G(![e>10000] -> X[z == 0])
+      & F[x>10000]
+    )
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: z
+    type: Int
+    owner: system
+  - name: e
+    type: Int
+    owner: environment
+  - name: ex
+    type: Int
+    owner: environment
+  - name: ez
+    type: Int
+    owner: environment

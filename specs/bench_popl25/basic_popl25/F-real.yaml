@@ -1,0 +1,28 @@
+property: "
+  [ex==x] & [ez==z] & [et==t] &
+  G(X[t==y(t)]) &
+  G(X[x==y(x)+1])
+  & F([x>=t+42] | [z>=t+42])
+  "
+variables:
+  - name: x
+    type: Int
+    owner: system
+  - name: z
+    type: Int
+    owner: system
+  - name: t
+    type: Int
+    owner: system
+  - name: e
+    type: Int
+    owner: environment
+  - name: ex
+    type: Int
+    owner: environment
+  - name: ez
+    type: Int
+    owner: environment
+  - name: et
+    type: Int
+    owner: environment

@@ -1,7 +1,6 @@
 import ply.lex as lex
 import ply.yacc as yacc
 from z3 import *
-import re
 from datatypes import *
 
 varstable = None
@@ -40,7 +39,7 @@ t_ignore = ' \t\n'  # Ignore spaces, tabs, and newlines
 
 # Error handling for illegal characters
 def t_error(t):
-    print(f"Illegal character '{t.value[0]}'")
+    error(f"Illegal character '{t.value[0]}'")
     t.lexer.skip(1)
 
 # Build the lexer
@@ -48,7 +47,7 @@ lexer = lex.lex()
 
 # Precedence rules (higher precedence goes first)
 precedence = (
-    ('left', 'IMPLIES', 'BIDIRECTIONAL'),  # Binary operators like -> and <->
+    ('left', 'IMPLIES', 'BIDIRECTIONAL', 'W','R'),  # Binary operators like -> and <->
     ('left', 'AND', 'OR'),  # N-ary operators like | and &
     ('right', 'F', 'G', 'X', 'NEG'),  # Unary operators have highest precedence (right associative)
 )
@@ -76,25 +75,9 @@ def p_expression_group(p):
     '''expression : LPAREN expression RPAREN'''
     p[0] = p[2]  # Grouping, just pass the inner expression
 
-def makevar(x):
-  orix = x
-  while x.startswith("FETCH_"):
-    x = x[6:]
-  match varstable[x]:
-    case "Int":
-      cons = Int
-    case "Real":
-      cons = Real
-    case _:
-      error("Unhandled type: " + varstable[x])
-  return cons(orix)
-
 def z3parse(s):
-  safe_globals = {"__builtins__": None}  # Disable built-in functions
   das = s[1:-1]
-  idregex = r"\b[a-zA-Z][a-zA-Z0-9_]*\b"
-  identifiers = re.findall(idregex, das)
-  z3vars = {key: makevar(key) for key in identifiers}
+  z3vars = getz3vars(das, variables)
   return eval(das, {}, z3vars)
 
 def p_expression_string(p):
@@ -107,7 +90,7 @@ def p_error(p):
     error(p)
 
 # Build the parser
-parser = yacc.yacc()
+parser = yacc.yacc(debug=0)
 
 def checkFetchLevel(f):
   def cfl(f,l):
@@ -126,9 +109,9 @@ def replace_expressions(text):
   return replace_nested(text)
 
 # Example usage
-def ltltparse(bstr, variables):
-  global varstable
-  varstable = {v["name"]:v["type"] for v in variables}
+def ltltparse(bstr, variables_value):
+  global variables
+  variables = variables_value
   bstr = replace_expressions(bstr)
   structed = parser.parse(bstr, lexer=lexer)
   if not checkFetchLevel(structed):
