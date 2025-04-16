@@ -5,7 +5,7 @@ import sympy
 from functools import reduce
 import re
 
-dbglevel = 0
+dbglevel = 1
 def dbg1(s):
   dbg(s,1)
 def dbg2(s):

@@ -29,13 +29,28 @@ def models(val, expr):
   ret = s.check() == sat
   return ret
 
+def z3_val_to_python(val):
+    if val.sort().kind() == Z3_INT_SORT:
+        return val.as_long()
+    elif val.sort().kind() == Z3_BOOL_SORT:
+        return is_true(val)
+    elif val.sort().kind() == Z3_REAL_SORT:
+        num, den = val.as_fraction()
+        return float(num) / float(den)
+    else:
+        # fallback: try to convert to string
+        return str(val)
+
+def model_to_dict(model):
+    return {str(d): z3_val_to_python(model[d]) for d in model.decls()}
+
 def getResponse(val, expr):
   for k,v in val.items():
     expr = substitute(expr, (Int(k), IntVal(v)))
   s = Solver()
   s.add(expr)
   s.check()
-  return s.model()
+  return model_to_dict(s.model())
 
 class Shield:
   def __init__(self, node):
@@ -59,17 +74,14 @@ class Shield:
 
 def main(args):
   shield, maxfetchdepth = readmealy(args.mealy)
-  plays = [
-      [{'d': 105}, {'a': 10}],
-      [{'d': 105}, {'a': 10}],
-      [{'d': 105}, {'a': 10}],
-  ]
+  plays = (json.loads(line) for line in sys.stdin)
   prevplays = deque(maxlen = maxfetchdepth)
   playvars= None
   for envplay, sysplay in plays:
     fetchedpast = {("FETCH_"*(i+1)+k) : v for i,kv in enumerate(reversed(prevplays)) for k,v in kv.items()}
-    print(shield.protect(envplay|fetchedpast, sysplay))
-    fullplay = envplay | sysplay
+    realsysplay = shield.protect(envplay|fetchedpast, sysplay)
+    print(json.dumps(realsysplay))
+    fullplay = envplay | realsysplay
     prevplays.append(fullplay)
 
 if __name__ == '__main__':
