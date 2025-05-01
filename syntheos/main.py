@@ -101,10 +101,9 @@ def writemealy(mealyfname, nodes, specdata):
 
 def main():
   parser = argparse.ArgumentParser('LTL fetch')
-  parser.add_argument('--yaml', help='YAML with specification', type=str, default="")
+  parser.add_argument('--yaml', help='YAML with specification', type=str, default=None)
   parser.add_argument('--strixmaxsecs', help='Maximum seconds', type=int, default=None)
   parser.add_argument('--reportdir', help='Reports root dir', type=str, default="")
-  parser.add_argument('--profile', help='Write profile info to file', type=str, default="")
   parser.add_argument('--save-mealy', nargs="?", const="", help='Save mealy machine to file', type=str, default=None)
   args = parser.parse_args()
   specdata = readfromyaml(args.yaml)
