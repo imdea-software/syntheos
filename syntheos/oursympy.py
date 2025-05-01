@@ -1,8 +1,8 @@
 from sympy import *
 from sympy.logic.boolalg import *
-from datatypes import ltlt2str, ltl2sympy, error, dbg2
 from sympy.logic.inference import satisfiable
 from itertools import chain
+from .datatypes import ltlt2str, ltl2sympy, error, dbg2
 
 def ourdistribute(expr):
   if isinstance(expr, Or):

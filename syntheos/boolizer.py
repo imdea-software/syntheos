@@ -1,4 +1,4 @@
-from datatypes import *
+from .datatypes import *
 from z3 import *
 from functools import reduce
 import copy

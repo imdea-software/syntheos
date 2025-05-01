@@ -1,8 +1,8 @@
-from datatypes import *
 import time
 import datetime
 import subprocess
-from hoaparser import parsehoa
+from .datatypes import *
+from .hoaparser import parsehoa
 
 def callstrix(boolizer, reporter, strixmaxsecs):
   ltlproperty = boolizer.getboolformula()

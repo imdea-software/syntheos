@@ -1,5 +1,5 @@
-from boolparser import boolparse
-from datatypes import *
+from .boolparser import boolparse
+from .datatypes import *
 from io import StringIO
 
 def push_negation(expr):

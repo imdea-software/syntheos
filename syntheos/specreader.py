@@ -1,5 +1,5 @@
 import yaml
-from datatypes import *
+from .datatypes import *
 from pathlib import Path
 
 def readfromyaml(fname):

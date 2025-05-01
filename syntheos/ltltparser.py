@@ -1,7 +1,7 @@
 import ply.lex as lex
 import ply.yacc as yacc
 from z3 import *
-from datatypes import *
+from .datatypes import *
 
 varstable = None
 

@@ -1,10 +1,10 @@
 import argparse
-from hoaparser import *
-from datatypes import *
 import json
-from boolparser import boolparse
 import z3
 from collections import deque
+from syntheos.boolparser import boolparse
+from syntheos.hoaparser import *
+from syntheos.datatypes import *
 
 def readmealy(mealyfname):
   mealydata = None

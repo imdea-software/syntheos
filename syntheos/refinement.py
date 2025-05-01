@@ -1,6 +1,6 @@
-from datatypes import *
+from .datatypes import *
 from sympy import Symbol, srepr, Not, And, Or, false, true
-from oursympy import getnewknowledge
+from .oursympy import getnewknowledge
 from functools import reduce
 from itertools import chain
 
