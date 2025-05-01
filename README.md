@@ -56,3 +56,18 @@ python syntheos.py --yaml spec.yaml
 ## Dependencies
 - Python 3.13
 - Strix (must be placed in the same folder as Syntheos)
+
+# Running with Docker (using Podman)
+You can build and run a Docker image of Syntheos using Podman:
+
+## Build the image
+Build the image with tag `syntheos` using:
+```bash
+podman build --platform linux/amd64 -t syntheos .
+```
+
+## Run with input from stdin
+You can run the image and provide the content of a YAML specification file via standard input:
+```bash
+podman run --platform linux/amd64 -i syntheos < spec.yaml
+```
