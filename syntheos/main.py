@@ -1,6 +1,6 @@
+import yaml
 import argparse
 import sys
-import json
 from .datatypes import *
 from .boolizer import Booleanizer
 from .refinement import refinetauto
@@ -90,14 +90,13 @@ def checkconsistencywith(edges, boolizer, consf):
   return True
 
 def writemealy(mealyfname, nodes, specdata):
-  thejson = specdata.copy()
-  thejson["transtab"] = {k:getZ3(v).sexpr() for k,v in nodes[0].edges[0].transtab.items()}
-  thejson["nodes"] = [[{"envplay": ltlt2str(edge.envplay), "sysplay": ltlt2str(edge.sysplay), "outnoden": edge.outnoden} for edge in node.edges] for node in nodes]
-  # convert into JSON:
-  y = json.dumps(thejson)
-  # the result is a JSON string:
-  with open(mealyfname, "w") as f:
-    f.write(y)
+    specdata["transtab"] = {k: getZ3(v).sexpr() for k, v in nodes[0].edges[0].transtab.items()}
+    specdata["nodes"] = [
+        [{"envplay": ltlt2str(edge.envplay), "sysplay": ltlt2str(edge.sysplay), "outnoden": edge.outnoden} for edge in node.edges]
+        for node in nodes
+    ]
+    with open(mealyfname, "w") as f:
+      yaml.dump(specdata, f, default_flow_style=False, sort_keys=False)
 
 def main():
   parser = argparse.ArgumentParser('LTL fetch')
@@ -121,6 +120,6 @@ def main():
     # consistent = all(thConsistent(edge, boolizer) for edge in edges) and (boolizer.maxfetchdepth == 0 or boolizer.realizable or all(tmpConsistent(edge, boolizer) for edge in edges))
   print("Done. The property is %s." % ("realizable" if boolizer.realizable else "unrealizable"))
   if args.save_mealy is not None:
-    mealyfname = args.save_mealy if args.save_mealy != "" else (specdata["name"] + ".json")
+    mealyfname = args.save_mealy if args.save_mealy != "" else (specdata["name"] + ".yaml")
     dbg1("Writing mealy to " + mealyfname)
     writemealy(mealyfname, nodes, specdata)

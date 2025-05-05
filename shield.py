@@ -1,5 +1,6 @@
 import argparse
 import json
+import yaml
 import z3
 from collections import deque
 from syntheos.boolparser import boolparse
@@ -9,7 +10,7 @@ from syntheos.datatypes import *
 def readmealy(mealyfname):
   mealydata = None
   with open(mealyfname, "r") as f:
-    mealydata = json.loads(f.read())
+    mealydata = yaml.safe_load(f.read())
   transtab = {k:z32ltlt(parse_smt2_string(f"(assert {v})", decls=getz3vars(v,mealydata["variables"]))[0]) for k,v in mealydata["transtab"].items()}
   mealynodes = mealydata["nodes"]
   nodes = [Node(str(i)) for i in range(len(mealynodes))]
