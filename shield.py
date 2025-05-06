@@ -22,14 +22,6 @@ def readmealy(mealyfname):
   maxfetchdepth = max([fetchdepth(getZ3(v)) for v in transtab.values()])
   return Shield(nodes[0]),maxfetchdepth
 
-def models(val, expr):
-  for k,v in val.items():
-    expr = substitute(expr, (Int(k), IntVal(v)))
-  s = Solver()
-  s.add(expr)
-  ret = s.check() == sat
-  return ret
-
 def z3_val_to_python(val):
     if val.sort().kind() == Z3_INT_SORT:
         return val.as_long()
@@ -45,33 +37,31 @@ def z3_val_to_python(val):
 def model_to_dict(model):
     return {str(d): z3_val_to_python(model[d]) for d in model.decls()}
 
-def getResponse(val, expr):
+def models(val, expr):
   for k,v in val.items():
     expr = substitute(expr, (Int(k), IntVal(v)))
   s = Solver()
   s.add(expr)
-  s.check()
-  return model_to_dict(s.model())
+  if s.check() == sat:
+    return model_to_dict(s.model())|val
+  return None
 
 class Shield:
   def __init__(self, node):
     self.node = node
 
   def protect(self, envval, prsysval):
-    if prsysval is None:
-      prsysval = ltlBoolSym('f');
     fullval = envval | prsysval
     for edge in self.node.edges:
       fullplay = z3.And(edge.getEnvPlay(), edge.getSysResponse())
-      if models(fullval, fullplay):
+      model = models(fullval, fullplay)
+      if model != None:
         self.node = edge.outnode
-        return prsysval
-    dbg1(f"The proposed response {prsysval} was not valid")
-    for edge in self.node.edges:
-      envplay = edge.getEnvPlay()
-      if models(envval, envplay):
-        self.node = edge.outnode
-        return getResponse(envval, edge.getSysResponse())
+        return {k:v for k,v in model.items() if k not in envval and not k.startswith("FETCH_")}
+    return None
+
+def keepvar(v, n):
+  return not v.startswith("FETCH_" * n)
 
 def main(args):
   shield, maxfetchdepth = readmealy(args.mealy)
@@ -79,10 +69,14 @@ def main(args):
   prevplays = deque(maxlen = maxfetchdepth)
   playvars= None
   for envplay, sysplay in plays:
-    fetchedpast = {("FETCH_"*(i+1)+k) : v for i,kv in enumerate(reversed(prevplays)) for k,v in kv.items()}
-    realsysplay = shield.protect(envplay|fetchedpast, sysplay)
-    print(json.dumps(realsysplay))
-    fullplay = envplay | realsysplay
+    fetchedpast = {("FETCH_"*(i+1)+k) : v for i,kv in enumerate(reversed(prevplays)) for k,v in kv.items() if keepvar(k, maxfetchdepth)}
+    fullenv = envplay|fetchedpast
+    model = shield.protect(fullenv, sysplay)
+    if model is None:
+      dbg1(f"The proposed response {sysplay} was not valid")
+      model = shield.protect(fullenv, {})
+    print(json.dumps(model))
+    fullplay = envplay | model
     prevplays.append(fullplay)
 
 if __name__ == '__main__':

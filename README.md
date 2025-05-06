@@ -53,6 +53,15 @@ Given a YAML file `spec.yaml`:
 python syntheos.py --yaml spec.yaml
 ```
 
+Will check the realizability of the specificaiton in `spec.yaml`.
+If the `--yaml` flag is not provided, the specification will be read from standard input in YAML format.
+
+You can provide a filename to save the mealy machine in case the specification is realizable with the flag `--save-mealy` and a filename. The output file will also be a YAML.
+
+```sh
+python syntheos.py --save-mealy controller.yaml --yaml spec.yaml
+```
+
 ## Dependencies
 - Python 3.13
 - Strix (must be placed in the same folder as Syntheos)
@@ -71,3 +80,13 @@ You can run the image and provide the content of a YAML specification file via s
 ```bash
 podman run --platform linux/amd64 -i syntheos < spec.yaml
 ```
+
+# Running the shield
+You can execute a controller that interprets the mealy machine that has been saved with `--save-mealy controller.yaml` with the program `shield.py` in this repository.
+
+```sh
+python shield.py --mealy controller.yaml
+```
+This controller will read lines from stdin, where each line is a list of two elements.
+The first element is a dictionary that maps each input variable to a concrete value. This represents the values provided by the environment at a specific time step.
+The second element is a dictionary that maps output variables to proposed values determined by the system. This entry can contain only a subset of the system variables, indicating that the rest can be any value that the controller finds suitable.
