@@ -81,12 +81,16 @@ You can run the image and provide the content of a YAML specification file via s
 podman run --platform linux/amd64 -i syntheos < spec.yaml
 ```
 
-# Running the shield
+# Running a shield from the controller
 You can execute a controller that interprets the mealy machine that has been saved with `--save-mealy controller.yaml` with the program `shield.py` in this repository.
 
 ```sh
 python shield.py --mealy controller.yaml
 ```
 This controller will read lines from stdin, where each line is a list of two elements.
+
 The first element is a dictionary that maps each input variable to a concrete value. This represents the values provided by the environment at a specific time step.
+
 The second element is a dictionary that maps output variables to proposed values determined by the system. This entry can contain only a subset of the system variables, indicating that the rest can be any value that the controller finds suitable.
+
+If the proposed output values do not constitute a valid system response, the shield will provide a safe move to play instead.
