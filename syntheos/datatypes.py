@@ -5,7 +5,11 @@ import sympy
 from functools import reduce
 import re
 
-dbglevel = 1
+dbglevel = 0
+def setdbglevel(n):
+  global dbglevel
+  dbglevel = n
+
 def dbg1(s):
   dbg(s,1)
 def dbg2(s):
@@ -233,7 +237,7 @@ def z32ltlt(f):
     return ltlZ3(f)
   error("Unhandled case:" + str(f))
 
-def getz3vars(das, variables):
+def getz3vars(identifiers, variables):
   varstable = {v["name"]:v["type"] for v in variables}
   def makevar(x):
     orix = x
@@ -247,6 +251,4 @@ def getz3vars(das, variables):
       case _:
         error("Unhandled type: " + varstable[x])
     return cons(orix)
-  idregex = r"\b[a-zA-Z][a-zA-Z0-9_]*\b"
-  identifiers = re.findall(idregex, das)
   return {key: makevar(key) for key in identifiers}

@@ -25,4 +25,3 @@ def readfromyaml(fname):
   except KeyError as exc:
     error(exc)
   return specdata
-

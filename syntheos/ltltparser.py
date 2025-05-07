@@ -77,7 +77,9 @@ def p_expression_group(p):
 
 def z3parse(s):
   das = s[1:-1]
-  z3vars = getz3vars(das, variables)
+  idregex = r"\b[a-zA-Z][a-zA-Z0-9_]*\b"
+  identifiers = re.findall(idregex, das)
+  z3vars = getz3vars(identifiers, variables)
   return eval(das, {}, z3vars)
 
 def p_expression_string(p):

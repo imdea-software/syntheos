@@ -90,36 +90,56 @@ def checkconsistencywith(edges, boolizer, consf):
   return True
 
 def writemealy(mealyfname, nodes, specdata):
-    specdata["transtab"] = {k: getZ3(v).sexpr() for k, v in nodes[0].edges[0].transtab.items()}
-    specdata["nodes"] = [
-        [{"envplay": ltlt2str(edge.envplay), "sysplay": ltlt2str(edge.sysplay), "outnoden": edge.outnoden} for edge in node.edges]
-        for node in nodes
-    ]
-    with open(mealyfname, "w") as f:
-      yaml.dump(specdata, f, default_flow_style=False, sort_keys=False)
+  specdata["transtab"] = {k: getZ3(v).sexpr() for k, v in nodes[0].edges[0].transtab.items()}
+  specdata["nodes"] = [[{"envplay": ltlt2str(edge.envplay), "sysplay": ltlt2str(edge.sysplay), "outnoden": edge.outnoden} for edge in node.edges] for node in nodes]
+  with open(mealyfname, "w") as f:
+    yaml.dump(specdata, f, default_flow_style=False, sort_keys=False)
 
-def main():
+def parse_arguments():
   parser = argparse.ArgumentParser('LTL fetch')
   parser.add_argument('--yaml', help='YAML with specification', type=str, default=None)
+  parser.add_argument('--dbglevel', help='Debug level', type=int, default=0)
   parser.add_argument('--strixmaxsecs', help='Maximum seconds', type=int, default=None)
   parser.add_argument('--reportdir', help='Reports root dir', type=str, default="")
   parser.add_argument('--save-mealy', nargs="?", const="", help='Save mealy machine to file', type=str, default=None)
-  args = parser.parse_args()
-  specdata = readfromyaml(args.yaml)
-  reporter = Reporter(specdata, args.reportdir)
+  parser.add_argument("--show-mealy", action="store_true", help='Show mealy machine')
+  return parser.parse_args()
+
+def initialize_boolizer(specdata):
   variables = specdata["variables"]
   boolizer = Booleanizer(variables)
   boolizer.setformula(ltltparse(specdata["property"], variables))
-  nodes = None
+  return boolizer
+
+def cegres(boolizer, reporter, strixmaxsecs):
   consistent = False
+  nodes = None
   while not consistent:
-    nodes = callstrix(boolizer, reporter, args.strixmaxsecs)
-    dbg3(lambda:print(nodes2dot(nodes)))
+    nodes = callstrix(boolizer, reporter, strixmaxsecs)
+    dbg3(lambda: print(nodes2dot(nodes)))
     edges = [edge for node in nodes for edge in node.edges]
-    consistent = checkconsistencywith(edges, boolizer, thConsistent) and (boolizer.maxfetchdepth == 0 or boolizer.realizable or checkconsistencywith(edges, boolizer, tmpConsistent))
-    # consistent = all(thConsistent(edge, boolizer) for edge in edges) and (boolizer.maxfetchdepth == 0 or boolizer.realizable or all(tmpConsistent(edge, boolizer) for edge in edges))
-  print("Done. The property is %s." % ("realizable" if boolizer.realizable else "unrealizable"))
+    consistent = (
+        checkconsistencywith(edges, boolizer, thConsistent) and
+        (boolizer.maxfetchdepth == 0 or boolizer.realizable or
+          checkconsistencywith(edges, boolizer, tmpConsistent))
+    )
+  return nodes
+
+def showorsave_mealy(args, nodes, specdata):
+  if args.show_mealy:
+    print("Mealy machine:")
+    print(nodes2dot(nodes))
   if args.save_mealy is not None:
-    mealyfname = args.save_mealy if args.save_mealy != "" else (specdata["name"] + ".yaml")
+    mealyfname = args.save_mealy if args.save_mealy != "" else (specdata["name"] + ".json")
     dbg1("Writing mealy to " + mealyfname)
     writemealy(mealyfname, nodes, specdata)
+
+def main():
+  args = parse_arguments()
+  setdbglevel(args.dbglevel)
+  specdata = readfromyaml(args.yaml)
+  reporter = Reporter(specdata, args.reportdir)
+  boolizer = initialize_boolizer(specdata)
+  nodes = cegres(boolizer, reporter, args.strixmaxsecs)
+  print("Done. The property is %s." % ("realizable" if boolizer.realizable else "unrealizable"))
+  showorsave_mealy(args, nodes, specdata)
