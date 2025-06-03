@@ -109,6 +109,9 @@ def initialize_boolizer(specdata):
   variables = specdata["variables"]
   boolizer = Booleanizer(variables)
   boolizer.setformula(ltltparse(specdata["property"], variables))
+  for tmptauto in specdata["tmptautos"]:
+    tautoform = bparse(tmptauto, variables)
+    boolizer.createtmpassumptionfor(getZ3(tautoform))
   return boolizer
 
 def cegres(boolizer, reporter, strixmaxsecs):
