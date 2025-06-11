@@ -3,8 +3,10 @@ import datetime
 import subprocess
 from .datatypes import *
 from .hoaparser import parsehoa
+from .config import CONFIG
 
-def callstrix(boolizer, reporter, strixmaxsecs):
+def callstrix(boolizer):
+  reporter = CONFIG.reporter
   ltlproperty = boolizer.getboolformula()
   dbg1("Table of literals:")
   dbg1("\n".join([l + " : " + str(f) + " (" + str(k) + ")" for [l,[f,k]] in boolizer.littable.items()]))
@@ -24,7 +26,7 @@ def callstrix(boolizer, reporter, strixmaxsecs):
   dbg1("Calling at " + str(datetime.datetime.fromtimestamp(starttime)))
   dbg1("./strix -f '" + strixprop + "' --ins="+envlitsstr + " --outs="+syslitsstr + " -o hoa")
   try:
-    strixout = subprocess.check_output(["./strix", "-f", strixprop, "--ins="+envlitsstr, "--outs="+syslitsstr, "-o", "hoa"], timeout = strixmaxsecs)
+    strixout = subprocess.check_output(["./strix", "-f", strixprop, "--ins="+envlitsstr, "--outs="+syslitsstr, "-o", "hoa"], timeout = CONFIG.strixmaxsecs)
     stoptime = time.time()
     dbg1("Returned at " + str(datetime.datetime.fromtimestamp(stoptime)))
     calldata["elapsed"] = stoptime - starttime

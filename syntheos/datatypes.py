@@ -24,6 +24,11 @@ def dbg(s,i):
       return
     print(msg)
 
+class EDGEKIND(Enum):
+  LEGAL = auto()
+  ILLEGAL = auto()
+  UNREACHABLE = auto()
+
 class LITTY(Enum):
   SYS = auto()
   ENV = auto()

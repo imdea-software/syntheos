@@ -1,6 +1,7 @@
 import yaml
 import argparse
 import sys
+from .config import CONFIG
 from .datatypes import *
 from .boolizer import Booleanizer
 from .refinement import refinetauto
@@ -24,18 +25,15 @@ def isSat(formula):
     return False
   error("Unkown satisfiability")
 
-def theoryTauto(edge, boolizer):
-  envz3 = edge.getEnvPlay()
+def envPlayNewThTauto(envz3):
   z3envvars = z3getvars(envz3)
   envexists = quantify(Exists, z3envvars, envz3)
   if not isSat(envexists):
-    if not boolizer.realizable:
-      newtauto = ltlNeg(z32ltlt(envz3))
-      return newtauto
-    return None
-  if not boolizer.realizable:
-    return None
-  sysz3 = edge.getSysResponse()
+    return ltlNeg(z32ltlt(envz3))
+  return None
+
+def sysPlayNewThTauto(envz3, sysz3, boolizer):
+  z3envvars = z3getvars(envz3)
   sysplaysymbols = z3getvars(sysz3)
   z3envvars.extend([v for v in sysplaysymbols if not boolizer.isSysVar(v.decl().name())])
   z3sysvars = [v for v in sysplaysymbols if boolizer.isSysVar(v.decl().name())]
@@ -49,14 +47,32 @@ def theoryTauto(edge, boolizer):
   newtauto = ltlDisj(ltlNeg(z32ltlt(sysz3)), z32ltlt(partition))
   return newtauto
 
+def theoryTauto(edge, boolizer):
+  envz3 = edge.getEnvPlay()
+  envtauto = envPlayNewThTauto(envz3)
+  if envtauto is not None:
+    if boolizer.realizable:
+      return EDGEKIND.UNREACHABLE, envtauto
+    return EDGEKIND.ILLEGAL, envtauto
+  sysz3 = edge.getSysResponse()
+  systauto = sysPlayNewThTauto(envz3, sysz3, boolizer)
+  if systauto is not None:
+    if boolizer.realizable:
+      return EDGEKIND.ILLEGAL, systauto
+    return EDGEKIND.UNREACHABLE, systauto
+  return EDGEKIND.LEGAL, None
+
 def thConsistent(edge, boolizer):
-  newthm = theoryTauto(edge, boolizer)
-  if newthm is not None:
-    newthm = refinetauto(boolizer, newthm)
+  edgekind, newthm = theoryTauto(edge, boolizer)
+  if edgekind == EDGEKIND.ILLEGAL:
     dbg1("Found theory inconsistency")
-    dbg2("Adding theorem:")
-    dbg2(ltlt2str(newthm))
-    boolizer.addTauto(newthm)
+    newthm = refinetauto(boolizer, newthm)
+    if newthm is None:
+      dbg1("But there was no new knowledge")
+    else:
+      dbg2("Adding theorem:")
+      dbg2(ltlt2str(newthm))
+      boolizer.addTauto(newthm)
     return False
   return True
 
@@ -82,12 +98,18 @@ def dbgedgeprint(i,nodesn):
 def checkconsistencywith(edges, boolizer, consf):
   nodesn = len(edges)
   i = 0
+  inconsistencies = 0
+  allconsistent = True
   for edge in edges:
     i = i+1
     dbg1(lambda: dbgedgeprint(i,nodesn))
-    if not consf(edge, boolizer):
+    edgeconsistent = consf(edge, boolizer)
+    if not edgeconsistent:
+      inconsistencies += 1
+      allconsistent = False
+    if inconsistencies > CONFIG.inconsistent_edges_tolerance:
       return False
-  return True
+  return allconsistent
 
 def writemealy(mealyfname, nodes, specdata):
   specdata["transtab"] = {k: getZ3(v).sexpr() for k, v in nodes[0].edges[0].transtab.items()}
@@ -103,6 +125,7 @@ def parse_arguments():
   parser.add_argument('--reportdir', help='Reports root dir', type=str, default="")
   parser.add_argument('--save-mealy', nargs="?", const="", help='Save mealy machine to file', type=str, default=None)
   parser.add_argument("--show-mealy", action="store_true", help='Show mealy machine')
+  parser.add_argument('--inconsistent-edges-tolerance', help='Maximum illegal edges tolerance', type=int, default=0)
   return parser.parse_args()
 
 def initialize_boolizer(specdata):
@@ -114,11 +137,11 @@ def initialize_boolizer(specdata):
     boolizer.createtmpassumptionfor(getZ3(tautoform))
   return boolizer
 
-def cegres(boolizer, reporter, strixmaxsecs):
+def cegres(boolizer):
   consistent = False
   nodes = None
   while not consistent:
-    nodes = callstrix(boolizer, reporter, strixmaxsecs)
+    nodes = callstrix(boolizer)
     dbg3(lambda: print(nodes2dot(nodes)))
     edges = [edge for node in nodes for edge in node.edges]
     consistent = (
@@ -139,10 +162,13 @@ def showorsave_mealy(args, nodes, specdata):
 
 def main():
   args = parse_arguments()
+  CONFIG.inconsistent_edges_tolerance = args.inconsistent_edges_tolerance
   setdbglevel(args.dbglevel)
   specdata = readfromyaml(args.yaml)
   reporter = Reporter(specdata, args.reportdir)
+  CONFIG.reporter = reporter
+  CONFIG.strixmaxsecs = args.strixmaxsecs
   boolizer = initialize_boolizer(specdata)
-  nodes = cegres(boolizer, reporter, args.strixmaxsecs)
+  nodes = cegres(boolizer)
   print("Done. The property is %s." % ("realizable" if boolizer.realizable else "unrealizable"))
   showorsave_mealy(args, nodes, specdata)

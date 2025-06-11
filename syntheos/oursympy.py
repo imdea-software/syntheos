@@ -35,4 +35,5 @@ def getnewknowledge(booltautos, expr):
       dbg2(tauto)
     if isnewknowledge(sympyknowledge, tauto):
       return tauto
-  error("No new knowledge?")
+  # error("No new knowledge?") # This might happen with no short-circuit
+  return None

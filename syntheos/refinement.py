@@ -24,7 +24,10 @@ def sympy2ltl(e):
 
 def refinetauto(boolizer, ltlform):
   sympyform = ltl2sympy(boolizer.boolize(ltlform))
-  tauto = sympy2ltl(getnewknowledge(boolizer.booltautos, sympyform))
+  newKnowledge = getnewknowledge(boolizer.booltautos, sympyform)
+  if newKnowledge is None:
+    return None
+  tauto = sympy2ltl(newKnowledge)
   transtab = {k:ltlZ3(v) for [k,[v,_]] in boolizer.littable.items()}
   play = replaceliterals(tauto, transtab)
   return satcore(play)
