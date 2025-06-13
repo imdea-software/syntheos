@@ -90,36 +90,47 @@ class Booleanizer:
     ret["operators"] = list(map(lambda f: self.boolize(f), ret["operators"]))
     return ret
 
-  def getliteral(self,th):
+  def literalexists(self,th):
+    return self.mgetliteral(th) is not None
+
+  def mgetliteral(self,th):
     assert not is_true(th)
     assert not is_false(th)
     for l,[f,_] in self.littable.items():
       if th==f:
         return ltlBoolSym(l)
+
+  def getliteral(self,th):
+    mliteral = self.mgetliteral(th)
+    if mliteral is not None:
+      return mliteral
     newlid = "l"+str(len(self.littable))
     kind = LITTY.SYS if self.containssysvars(th) else LITTY.ENV
     self.littable[newlid] = [th,kind]
     return ltlBoolSym(newlid)
 
-
-  def createtmpassumptionfor(self, formula):
-    if is_true(formula):
-      return False
-    ret = False
-    for l in getliterals(z32ltlt(formula)):
-      ret = ret or self.createtmpassumptionfornormalized(l)
-    return ret
-
-  def createtmpassumptionfornormalized(self, formula):
-    literal = self.getliteral(formula)
+  def tautoExists(self, formula):
     fetchformula = mapfetch(formula)
-    fetchliteral = self.getliteral(fetchformula)
-    newtauto = ltlG(ltlIff(literal,ltlX(fetchliteral)))
-    for ft in self.fetchtautos:
-      if ft==newtauto:
-        return False
-    self.fetchtautos.append(newtauto)
-    return True
+    mliteral = self.mgetliteral(formula)
+    mfliteral = self.mgetliteral(fetchformula)
+    if mliteral is None or mfliteral is None:
+      return False
+    tauto = ltlG(ltlIff(mliteral,ltlX(mfliteral)))
+    return tauto in self.fetchtautos
+
+  def createTauto(self, formula):
+    fetchformula = mapfetch(formula)
+    literal = self.getliteral(formula)
+    fliteral = self.getliteral(fetchformula)
+    return ltlG(ltlIff(literal,ltlX(fliteral)))
+
+  def missingTautos(self, formula):
+    if is_true(formula):
+      return []
+    return [l for l in getliterals(z32ltlt(formula)) if not self.tautoExists(l)]
+
+  def createtmpassumptionfor(self, th):
+    self.fetchtautos.append(self.createTauto(th))
 
   def getboolformula(self):
     assumption = makeconj(self.assumptions)

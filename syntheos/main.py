@@ -81,12 +81,13 @@ def tmpConsistent(edge, boolizer):
   unfetchedvars = [var for var in z3getvars(envplay) if not var.decl().name().startswith("FETCH_")]
   fetchexpr = Tactic('qe2')(quantify(Exists, unfetchedvars, envplay)).as_expr()
   renamed_expr = substitute(fetchexpr, [(var, z3.Const(var.decl().name()[6:], var.sort())) for var in z3util.get_vars(fetchexpr)])
-  literals = getliterals(z32ltlt(renamed_expr))
-  newliterals = [y for y in literals if boolizer.createtmpassumptionfor(y)]
-  if len(newliterals) > 0:
+  missingTautos = boolizer.missingTautos(renamed_expr)
+  if len(missingTautos) > 0:
     dbg1("Found temporal inconsistency")
     dbg2("Adding tmp assumptions for literals:")
-    dbg2(literals)
+    dbg2(missingTautos)
+    for t in missingTautos:
+      boolizer.createtmpassumptionfor(t)
     return False
   return True
 
