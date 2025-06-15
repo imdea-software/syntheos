@@ -93,32 +93,51 @@ def ltlt2str(f):
       return "f"
     return symbol(f)
   if isZ3(f):
-    return "[" + str(getZ3(f)) + "]"
+    return "[" + z32str(getZ3(f)) + "]"
   if len(f["operators"]) == 1:
     return f["kind"] + "(" + ltlt2str(f["operators"][0]) + ")"
   if len(f["operators"]) == 2:
     return "(" + ltlt2str(f["operators"][0]) + " " + f["kind"] + " " + ltlt2str(f["operators"][1]) + ")"
 
-def z32str(expr, parent_op=None):
+def z32str(expr, parent_op=None, bound_vars = []):
   if is_and(expr):
-    conjunction_str = " ∧ ".join(z32str(arg, 'And') for arg in expr.children())
-    return f"({conjunction_str})" if parent_op == 'Or' else conjunction_str
+    conjunction_str = " ∧ ".join(z32str(arg, 'And', bound_vars=bound_vars) for arg in expr.children())
+    return f"({conjunction_str})" if parent_op != 'And' and parent_op is not None else conjunction_str
   elif is_or(expr):
-    disjunction_str = " ∨ ".join(z32str(arg, 'Or') for arg in expr.children())
-    return f"({disjunction_str})" if parent_op == 'And' else disjunction_str
+    disjunction_str = " ∨ ".join(z32str(arg, 'Or', bound_vars=bound_vars) for arg in expr.children())
+    return f"({disjunction_str})" if parent_op != 'Or' and parent_op is not None else disjunction_str
   elif is_not(expr):
-    negated_expr = z32str(expr.arg(0), 'Not')
+    negated_expr = z32str(expr.arg(0), 'Not', bound_vars=bound_vars)
     return f"¬({negated_expr})"
+  elif is_implies(expr):
+    disjunction_str = " -> ".join(z32str(arg, 'Implies', bound_vars=bound_vars) for arg in expr.children())
+    return f"({disjunction_str})" if parent_op is not None else disjunction_str
+  elif is_quantifier(expr):
+    quant = "∀" if expr.is_forall() else "∃"
+    num_vars = expr.num_vars()
+    names = [str(expr.var_name(i)) for i in reversed(range(num_vars))]
+    new_bound_vars = names + bound_vars
+    body_str = z32str(expr.body(), None, new_bound_vars)
+    vars_str = ", ".join(names)
+    return f"{quant} {vars_str}. ({body_str})"
+  elif is_var(expr):
+    idx = get_var_index(expr)
+    if idx < len(bound_vars):
+      return bound_vars[idx]
+    else:
+      return "UNKNOWNVAR"
   elif expr.decl().kind() == Z3_OP_LE:
-    return f"{expr.arg(0)} ≤ {expr.arg(1)}"
+    return f"{z32str(expr.arg(0), bound_vars=bound_vars)} ≤ {z32str(expr.arg(1), bound_vars=bound_vars)}"
   elif expr.decl().kind() == Z3_OP_LT:
-    return f"{expr.arg(0)} < {expr.arg(1)}"
+    return f"{z32str(expr.arg(0), bound_vars=bound_vars)} < {z32str(expr.arg(1), bound_vars=bound_vars)}"
   elif expr.decl().kind() == Z3_OP_GE:
-    return f"{expr.arg(0)} ≥ {expr.arg(1)}"
+    return f"{z32str(expr.arg(0), bound_vars=bound_vars)} ≥ {z32str(expr.arg(1), bound_vars=bound_vars)}"
   elif expr.decl().kind() == Z3_OP_GT:
-    return f"{expr.arg(0)} > {expr.arg(1)}"
+    return f"{z32str(expr.arg(0), bound_vars=bound_vars)} > {z32str(expr.arg(1), bound_vars=bound_vars)}"
   elif expr.decl().kind() == Z3_OP_EQ:
-    return f"{expr.arg(0)} = {expr.arg(1)}"
+    return f"{z32str(expr.arg(0), bound_vars=bound_vars)} = {z32str(expr.arg(1), bound_vars=bound_vars)}"
+  elif expr.decl().kind() == Z3_OP_ADD:
+    return f"{z32str(expr.arg(0), bound_vars=bound_vars)} + {z32str(expr.arg(1), bound_vars=bound_vars)}"
   else:
     return str(expr)
 

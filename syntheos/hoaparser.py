@@ -81,13 +81,16 @@ def processEdge(line, currentnode, nodes, transtab):
   e = Edge(plays[0], plays[1], nodes[outnoden], outnoden, transtab)
   nodes[currentnode].addEdge(e)
 
+def play2str(play):
+  return z32str(push_negation(play))
+
 def nodes2dot(nodes):
   ret = "digraph {\n"
   for noden, node in enumerate(nodes):
     for edge in node.edges:
       ret += "    " + str(noden) + " -> " + edge.outnode.name +\
-      "[label=\"When\\n" + z32str(push_negation(edge.getEnvPlay())) + "\\nthen:\\n" +\
-      z32str(push_negation(edge.getSysResponse())) + "\"];\n"
+      "[label=\"When\\n" + play2str(edge.getEnvPlay()) + "\\nthen:\\n" +\
+      play2str(edge.getSysResponse()) + "\"];\n"
   ret += "}"
   return ret
 

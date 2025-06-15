@@ -3,10 +3,10 @@ import argparse
 import sys
 from .config import CONFIG
 from .datatypes import *
-from .boolizer import Booleanizer
+from .boolizer import Booleanizer, mapfetch
 from .refinement import refinetauto
 from z3 import ForAll, Exists, Solver, Implies, unsat, sat, simplify, Tactic
-from .hoaparser import nodes2dot
+from .hoaparser import nodes2dot, play2str
 from .reporter import Reporter
 from .specreader import readfromyaml
 from .strixcaller import callstrix
@@ -42,8 +42,7 @@ def sysPlayNewThTauto(envz3, sysz3, boolizer):
   sysforall = quantify(ForAll, z3envvars, implication)
   if isSat(sysforall):
     return None
-  partition = quantify(Exists, z3sysvars, sysz3)
-  partition = Tactic('qe2')(partition).as_expr() # Comment this line to disable qe
+  partition = Tactic('qe2')(sysexists).as_expr() # Comment this line to disable qe
   newtauto = ltlDisj(ltlNeg(z32ltlt(sysz3)), z32ltlt(partition))
   return newtauto
 
@@ -62,13 +61,14 @@ def theoryTauto(edge, boolizer):
     return EDGEKIND.UNREACHABLE, systauto
   return EDGEKIND.LEGAL, None
 
-def thConsistent(edge, boolizer):
+def thConsistent(edge, boolizer, nonewtautosallowed):
   edgekind, newthm = theoryTauto(edge, boolizer)
   if edgekind == EDGEKIND.ILLEGAL:
     dbg1("Found theory inconsistency")
     newthm = refinetauto(boolizer, newthm)
     if newthm is None:
       dbg1("But there was no new knowledge")
+      assert(nonewtautosallowed)
     else:
       dbg2("Adding theorem:")
       dbg2(ltlt2str(newthm))
@@ -76,20 +76,41 @@ def thConsistent(edge, boolizer):
     return False
   return True
 
-def tmpConsistent(edge, boolizer):
-  envplay = edge.getEnvPlay()
-  unfetchedvars = [var for var in z3getvars(envplay) if not var.decl().name().startswith("FETCH_")]
-  fetchexpr = Tactic('qe2')(quantify(Exists, unfetchedvars, envplay)).as_expr()
+def isFetchedVar(var):
+  return var.decl().name().startswith("FETCH_")
+
+def realtmpConsistent(edges, boolizer, nonewtautosallowed):
+  [e0, e1] = edges
+  tpre = mapfetch(And(e0.getSysResponse(), e0.getEnvPlay()))
+  e1envplay = e1.getEnvPlay()
+  e1sysplay = e1.getSysResponse()
+  prevars = list(dict.fromkeys(z3getvars(tpre) + [v for v in (z3getvars(e1sysplay) + z3getvars(e1envplay)) if isFetchedVar(v)]))
+  e1envvars = [v for v in z3getvars(e1envplay) if not isFetchedVar(v)]
+  envexists = quantify(Exists, e1envvars, e1envplay)
+  # e1sysplayvars = z3getvars(e1sysplay)
+  # e1envvars.extend([v for v in e1sysplayvars if not boolizer.isSysVar(v.decl().name()) and not v in prevars])
+  # e1sysvars = [v for v in e1sysplayvars if boolizer.isSysVar(v.decl().name()) and not v in prevars]
+  # sysexists = quantify(Exists, e1sysvars, e1sysplay)
+  # implication = Implies(e1envplay, sysexists)
+  # sysforall = quantify(ForAll, e1envvars, implication)
+  # fullformula = quantify(ForAll, prevars, Implies(tpre, And(envexists, sysforall)))
+  fullformula = quantify(ForAll, prevars, Implies(tpre, envexists))
+  issat = isSat(fullformula)
+  if issat:
+    return True
+  unfetchedvars = [var for var in z3getvars(e1envplay) if not isFetchedVar(var)]
+  fetchexpr = Tactic('qe2')(quantify(Exists, unfetchedvars, e1envplay)).as_expr()
   renamed_expr = substitute(fetchexpr, [(var, z3.Const(var.decl().name()[6:], var.sort())) for var in z3util.get_vars(fetchexpr)])
   missingTautos = boolizer.missingTautos(renamed_expr)
-  if len(missingTautos) > 0:
-    dbg1("Found temporal inconsistency")
-    dbg2("Adding tmp assumptions for literals:")
-    dbg2(missingTautos)
+  if (missingTautos):
+    dbg2("Adding tmp tautos:")
     for t in missingTautos:
+      dbg2(z32str(t))
       boolizer.createtmpassumptionfor(t)
-    return False
-  return True
+  else:
+    dbg2("No new temporal tautos")
+    assert(nonewtautosallowed)
+  return False
 
 def dbgedgeprint(i,nodesn):
   sys.stdout.write('\r')
@@ -104,7 +125,7 @@ def checkconsistencywith(edges, boolizer, consf):
   for edge in edges:
     i = i+1
     dbg1(lambda: dbgedgeprint(i,nodesn))
-    edgeconsistent = consf(edge, boolizer)
+    edgeconsistent = consf(edge, boolizer, inconsistencies > 0)
     if not edgeconsistent:
       inconsistencies += 1
       allconsistent = False
@@ -145,10 +166,11 @@ def cegres(boolizer):
     nodes = callstrix(boolizer)
     dbg3(lambda: print(nodes2dot(nodes)))
     edges = [edge for node in nodes for edge in node.edges]
+    consedges = [[edge, consedge] for node in nodes for edge in node.edges for consedge in edge.outnode.edges]
     consistent = (
         checkconsistencywith(edges, boolizer, thConsistent) and
         (boolizer.maxfetchdepth == 0 or boolizer.realizable or
-          checkconsistencywith(edges, boolizer, tmpConsistent))
+          checkconsistencywith(consedges, boolizer, realtmpConsistent))
     )
   return nodes
 

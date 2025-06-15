@@ -2,7 +2,7 @@ from sympy import *
 from sympy.logic.boolalg import *
 from sympy.logic.inference import satisfiable
 from itertools import chain
-from .datatypes import ltlt2str, ltl2sympy, error, dbg2
+from .datatypes import ltlt2str, ltl2sympy, error, dbg2, dbg3
 
 def ourdistribute(expr):
   if isinstance(expr, Or):
@@ -31,8 +31,8 @@ def getnewknowledge(booltautos, expr):
   for tauto in tautos:
     dbgcnt += 1
     if dbgcnt > 10000:
-      dbg2(f"Checking tauto {dbgcnt}")
-      dbg2(tauto)
+      dbg3(f"Checking tauto {dbgcnt}")
+      dbg3(tauto)
     if isnewknowledge(sympyknowledge, tauto):
       return tauto
   # error("No new knowledge?") # This might happen with no short-circuit
