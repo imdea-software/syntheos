@@ -79,25 +79,18 @@ def thConsistent(edge, boolizer, nonewtautosallowed):
 def isFetchedVar(var):
   return var.decl().name().startswith("FETCH_")
 
-def realtmpConsistent(edges, boolizer, nonewtautosallowed):
-  [e0, e1] = edges
+def tmpConsistent(edges, boolizer, nonewtautosallowed):
+  e0, e1 = edges
   tpre = mapfetch(And(e0.getSysResponse(), e0.getEnvPlay()))
   e1envplay = e1.getEnvPlay()
   e1sysplay = e1.getSysResponse()
   prevars = list(dict.fromkeys(z3getvars(tpre) + [v for v in (z3getvars(e1sysplay) + z3getvars(e1envplay)) if isFetchedVar(v)]))
   e1envvars = [v for v in z3getvars(e1envplay) if not isFetchedVar(v)]
   envexists = quantify(Exists, e1envvars, e1envplay)
-  # e1sysplayvars = z3getvars(e1sysplay)
-  # e1envvars.extend([v for v in e1sysplayvars if not boolizer.isSysVar(v.decl().name()) and not v in prevars])
-  # e1sysvars = [v for v in e1sysplayvars if boolizer.isSysVar(v.decl().name()) and not v in prevars]
-  # sysexists = quantify(Exists, e1sysvars, e1sysplay)
-  # implication = Implies(e1envplay, sysexists)
-  # sysforall = quantify(ForAll, e1envvars, implication)
-  # fullformula = quantify(ForAll, prevars, Implies(tpre, And(envexists, sysforall)))
   fullformula = quantify(ForAll, prevars, Implies(tpre, envexists))
-  issat = isSat(fullformula)
-  if issat:
+  if isSat(fullformula):
     return True
+  dbg1("Found temporal inconsistency")
   unfetchedvars = [var for var in z3getvars(e1envplay) if not isFetchedVar(var)]
   fetchexpr = Tactic('qe2')(quantify(Exists, unfetchedvars, e1envplay)).as_expr()
   renamed_expr = substitute(fetchexpr, [(var, z3.Const(var.decl().name()[6:], var.sort())) for var in z3util.get_vars(fetchexpr)])
@@ -119,12 +112,10 @@ def dbgedgeprint(i,nodesn):
 
 def checkconsistencywith(edges, boolizer, consf):
   nodesn = len(edges)
-  i = 0
   inconsistencies = 0
   allconsistent = True
-  for edge in edges:
-    i = i+1
-    dbg1(lambda: dbgedgeprint(i,nodesn))
+  for idx, edge in enumerate(edges, 1):
+    dbg1(lambda: dbgedgeprint(idx,nodesn))
     edgeconsistent = consf(edge, boolizer, inconsistencies > 0)
     if not edgeconsistent:
       inconsistencies += 1
@@ -160,19 +151,15 @@ def initialize_boolizer(specdata):
   return boolizer
 
 def cegres(boolizer):
-  consistent = False
-  nodes = None
-  while not consistent:
+  while True:
     nodes = callstrix(boolizer)
     dbg3(lambda: print(nodes2dot(nodes)))
     edges = [edge for node in nodes for edge in node.edges]
     consedges = [[edge, consedge] for node in nodes for edge in node.edges for consedge in edge.outnode.edges]
-    consistent = (
-        checkconsistencywith(edges, boolizer, thConsistent) and
-        (boolizer.maxfetchdepth == 0 or boolizer.realizable or
-          checkconsistencywith(consedges, boolizer, realtmpConsistent))
-    )
-  return nodes
+    if checkconsistencywith(edges, boolizer, thConsistent) and \
+       (boolizer.maxfetchdepth == 0 or boolizer.realizable or \
+        checkconsistencywith(consedges, boolizer, tmpConsistent)):
+      return nodes
 
 def showorsave_mealy(args, nodes, specdata):
   if args.show_mealy:

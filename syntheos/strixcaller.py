@@ -8,11 +8,11 @@ from .config import CONFIG
 def callstrix(boolizer):
   reporter = CONFIG.reporter
   ltlproperty = boolizer.getboolformula()
-  dbg1("Table of literals:")
-  dbg1("\n".join([l + " : " + str(f) + " (" + str(k) + ")" for [l,[f,k]] in boolizer.littable.items()]))
+  dbg2("Table of literals:")
+  dbg2("\n".join([l + " : " + str(f) + " (" + str(k) + ")" for [l,[f,k]] in boolizer.littable.items()]))
   strixprop = ltlt2str(ltlproperty)
-  dbg1("Strix property:")
-  dbg1(strixprop)
+  dbg2("Strix property:")
+  dbg2(strixprop)
   envlits = [l for l,[_,k] in boolizer.littable.items() if k == LITTY.ENV]
   envlitsstr = ",".join(envlits)
   syslits = [l for l,[_,k] in boolizer.littable.items() if k == LITTY.SYS]
