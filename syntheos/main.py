@@ -50,15 +50,11 @@ def theoryTauto(edge, boolizer):
   envz3 = edge.getEnvPlay()
   envtauto = envPlayNewThTauto(envz3)
   if envtauto is not None:
-    if boolizer.realizable:
-      return EDGEKIND.UNREACHABLE, envtauto
-    return EDGEKIND.ILLEGAL, envtauto
+    return (EDGEKIND.UNREACHABLE if boolizer.realizable else EDGEKIND.ILLEGAL, envtauto)
   sysz3 = edge.getSysResponse()
   systauto = sysPlayNewThTauto(envz3, sysz3, boolizer)
   if systauto is not None:
-    if boolizer.realizable:
-      return EDGEKIND.ILLEGAL, systauto
-    return EDGEKIND.UNREACHABLE, systauto
+    return (EDGEKIND.ILLEGAL if boolizer.realizable else EDGEKIND.UNREACHABLE, systauto)
   return EDGEKIND.LEGAL, None
 
 def thConsistent(edge, boolizer, nonewtautosallowed):
