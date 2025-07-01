@@ -1,23 +1,16 @@
 from .datatypes import *
-from z3 import *
+# from .maybenotz3 import *
+from . import maybenotz3 as mnz3
 from functools import reduce
 import copy
 
 def copy_and_fetch(var):
-  new_name = "FETCH_" + var.decl().name()
-  if isinstance(var, IntNumRef) or isinstance(var, ArithRef):  # Int or Real
-      return Int(new_name) if var.is_int() else Real(new_name)
-  elif isinstance(var, BoolRef):  # Boolean
-      return Bool(new_name)
-  elif isinstance(var, BitVecRef):  # Bit-vector
-      return BitVec(new_name, var.size())
-  else:
-      raise TypeError("Unsupported Z3 variable type")
+  return mnz3.copy_and_rename(var, lambda x : "FETCH_" + x)
 
 def mapfetch(lit):
-  if isz3const(lit):
+  if mnz3.isz3const(lit):
     return lit
-  if isz3var(lit):
+  if mnz3.isz3var(lit):
     return copy_and_fetch(lit)
   new_args = [mapfetch(arg) for arg in lit.children()]
   return lit.decl()(*new_args)
@@ -47,15 +40,13 @@ class Booleanizer:
   def addTauto(self, formula):
     if isZ3(formula):
       f = getZ3(formula)
-      if is_true(f):
+      if mnz3.is_true(f):
         return
     self.booltautos.append(self.boolize(formula))
     z3form = ltlt2z3(formula)
     z3vars = z3getvars(z3form)
-    forallformula = quantify(ForAll, z3vars, z3form)
-    solver = Solver()
-    solver.add(forallformula)
-    if solver.check() == unsat:
+    forallformula = mnz3.make_forall(z3vars, z3form)
+    if not mnz3.isSat(forallformula):
       error("Not a tautology")
     if self.containssysvars(z3form):
       self.addguarantee(ltlG(formula))
@@ -94,8 +85,8 @@ class Booleanizer:
     return self.mgetliteral(th) is not None
 
   def mgetliteral(self,th):
-    assert not is_true(th)
-    assert not is_false(th)
+    assert not mnz3.is_true(th)
+    assert not mnz3.is_false(th)
     for l,[f,_] in self.littable.items():
       if th==f:
         return ltlBoolSym(l)
@@ -125,7 +116,7 @@ class Booleanizer:
     return ltlG(ltlIff(literal,ltlX(fliteral)))
 
   def missingTautos(self, formula):
-    if is_true(formula):
+    if mnz3.is_true(formula):
       return []
     return [l for l in getliterals(z32ltlt(formula)) if not self.tautoExists(l)]
 
