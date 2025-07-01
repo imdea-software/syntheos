@@ -5,7 +5,7 @@ from .config import CONFIG
 from .datatypes import *
 from .boolizer import Booleanizer, mapfetch
 from .refinement import refinetauto
-from z3 import ForAll, Exists, Solver, Implies, unsat, sat, simplify, Tactic
+from . import maybenotz3 as mnz3
 from .hoaparser import nodes2dot, play2str
 from .reporter import Reporter
 from .specreader import readfromyaml
@@ -14,21 +14,10 @@ from .ltltparser import ltltparse
 
 sys.setrecursionlimit(10000)
 
-def isSat(formula):
-  formula = simplify(formula)
-  solver = Solver()
-  solver.add(formula)
-  satres = solver.check()
-  if satres == sat:
-    return True
-  if satres == unsat:
-    return False
-  error("Unkown satisfiability")
-
 def envPlayNewThTauto(envz3):
   z3envvars = z3getvars(envz3)
-  envexists = quantify(Exists, z3envvars, envz3)
-  if not isSat(envexists):
+  envexists = mnz3.make_exists(z3envvars, envz3)
+  if not mnz3.isSat(envexists):
     return ltlNeg(z32ltlt(envz3))
   return None
 
@@ -37,12 +26,12 @@ def sysPlayNewThTauto(envz3, sysz3, boolizer):
   sysplaysymbols = z3getvars(sysz3)
   z3envvars.extend([v for v in sysplaysymbols if not boolizer.isSysVar(v.decl().name())])
   z3sysvars = [v for v in sysplaysymbols if boolizer.isSysVar(v.decl().name())]
-  sysexists = quantify(Exists, z3sysvars, sysz3)
-  implication = Implies(envz3, sysexists)
-  sysforall = quantify(ForAll, z3envvars, implication)
-  if isSat(sysforall):
+  sysexists = mnz3.make_exists(z3sysvars, sysz3)
+  implication = mnz3.thImplies(envz3, sysexists)
+  sysforall = mnz3.make_forall(z3envvars, implication)
+  if mnz3.isSat(sysforall):
     return None
-  partition = Tactic('qe2')(sysexists).as_expr() # Comment this line to disable qe
+  partition = mnz3.eliminate_quantifier(sysexists)
   newtauto = ltlDisj(ltlNeg(z32ltlt(sysz3)), z32ltlt(partition))
   return newtauto
 
@@ -77,24 +66,24 @@ def isFetchedVar(var):
 
 def tmpConsistent(edges, boolizer, nonewtautosallowed):
   e0, e1 = edges
-  tpre = mapfetch(And(e0.getSysResponse(), e0.getEnvPlay()))
+  tpre = mapfetch(mnz3.And(e0.getSysResponse(), e0.getEnvPlay()))
   e1envplay = e1.getEnvPlay()
   e1sysplay = e1.getSysResponse()
   prevars = list(dict.fromkeys(z3getvars(tpre) + [v for v in (z3getvars(e1sysplay) + z3getvars(e1envplay)) if isFetchedVar(v)]))
   e1envvars = [v for v in z3getvars(e1envplay) if not isFetchedVar(v)]
-  envexists = quantify(Exists, e1envvars, e1envplay)
-  fullformula = quantify(ForAll, prevars, Implies(tpre, envexists))
-  if isSat(fullformula):
+  envexists = mnz3.make_exists(e1envvars, e1envplay)
+  fullformula = mnz3.make_forall(prevars, mnz3.thImplies(tpre, envexists))
+  if mnz3.isSat(fullformula):
     return True
   dbg1("Found temporal inconsistency")
   unfetchedvars = [var for var in z3getvars(e1envplay) if not isFetchedVar(var)]
-  fetchexpr = Tactic('qe2')(quantify(Exists, unfetchedvars, e1envplay)).as_expr()
-  renamed_expr = substitute(fetchexpr, [(var, z3.Const(var.decl().name()[6:], var.sort())) for var in z3util.get_vars(fetchexpr)])
+  fetchexpr = mnz3.eliminate_quantifier(mnz3.make_exists(unfetchedvars, e1envplay))
+  renamed_expr = mnz3.rename_vars(fetchexpr, lambda x: x[6:])
   missingTautos = boolizer.missingTautos(renamed_expr)
   if (missingTautos):
     dbg2("Adding tmp tautos:")
     for t in missingTautos:
-      dbg2(z32str(t))
+      dbg2(mnz3.z32str(t))
       boolizer.createtmpassumptionfor(t)
   else:
     dbg2("No new temporal tautos")
@@ -106,9 +95,12 @@ def dbgedgeprint(i,nodesn):
   sys.stdout.write(f"Checking edge {i}/{nodesn}. ")
   sys.stdout.flush()
 
-def checkconsistencywith(edges, boolizer, consf):
+def checkconsistencywith(edges, boolizer, consf, inconsistencies = 0):
+  # You can provide a value for inconsistencies (and return it)
+  # if you want to share the inconsistencies checker between the temporal
+  # and the theories checker.
+  # You will also have to handle the boolean short-circuit.
   nodesn = len(edges)
-  inconsistencies = 0
   allconsistent = True
   for idx, edge in enumerate(edges, 1):
     dbg1(lambda: dbgedgeprint(idx,nodesn))

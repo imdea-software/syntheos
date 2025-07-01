@@ -1,28 +1,7 @@
 from .boolparser import boolparse
 from .datatypes import *
 from io import StringIO
-
-def push_negation(expr):
-  if is_not(expr):
-    inner = expr.arg(0)
-    if inner.decl().kind() == Z3_OP_GT:
-      return inner.arg(0) <= inner.arg(1)
-    elif inner.decl().kind() == Z3_OP_GE:
-      return inner.arg(0) < inner.arg(1)
-    elif inner.decl().kind() == Z3_OP_LT:
-      return inner.arg(0) >= inner.arg(1)
-    elif inner.decl().kind() == Z3_OP_LE:
-      return inner.arg(0) > inner.arg(1)
-    elif is_and(inner):
-      return Or(*[push_negation(Not(arg)) for arg in inner.children()])
-    elif is_or(inner):
-      return And(*[push_negation(Not(arg)) for arg in inner.children()])
-    else:
-        return Not(push_negation(inner))
-  elif is_and(expr) or is_or(expr):
-    return expr.decl()(*[push_negation(arg) for arg in expr.children()])
-  else:
-    return expr
+from . import maybenotz3 as mnz3
 
 def simply(cond, transtab):
   return ltlt2z3(replaceliterals(cond, transtab))
@@ -82,7 +61,7 @@ def processEdge(line, currentnode, nodes, transtab):
   nodes[currentnode].addEdge(e)
 
 def play2str(play):
-  return z32str(push_negation(play))
+  return mnz3.z32str(mnz3.push_negation(play))
 
 def nodes2dot(nodes):
   ret = "digraph {\n"

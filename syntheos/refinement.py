@@ -46,13 +46,5 @@ def negatom(atom):
   return ltlNeg(atom)
 
 def satcore(tauto):
-  atoms = getatoms(tauto)
-  s = Solver()
-  s.set(unsat_core=True)
-  enumatoms = list(enumerate(atoms))
-  for i, atom in enumatoms:
-    s.assert_and_track(atom, 'atom_'+str(i))
-  result = s.check()
-  assert result == unsat
-  c = s.unsat_core()
-  return reduce(ltlDisj, [negatom(z32ltlt(atom)) for i,atom in enumatoms if Bool('atom_'+str(i)) in c])
+  atoms = mnz3.getUnsatCore(getatoms(tauto))
+  return reduce(ltlDisj, [negatom(z32ltlt(atom)) for atom in atoms])
