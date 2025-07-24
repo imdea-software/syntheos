@@ -28,10 +28,10 @@ class Reporter:
     with open(mydir + "/root.txt", "w+") as reportfile:
       reportfile.write(json.dumps(self.specdata)+"\n")
       reportfile.write(json.dumps(self.calls))
-    for i, call in enumerate(self.calls):
-      fname = name + str(i) + ".tsl "
-      out = ",".join(call["envvars"]) + " "
-      out += ",".join(call["sysvars"]) + " "
-      out += "(" + (re.sub('(l\\d+)', '"\\1"', call["property"])).replace(' ',"") + ")"
-      with open(mydir + "/" + fname, "w+") as reportfile:
-        reportfile.write(out)
+    # for i, call in enumerate(self.calls):
+    #   fname = name + str(i) + ".tsl "
+    #   out = ",".join(call["envvars"]) + " "
+    #   out += ",".join(call["sysvars"]) + " "
+    #   out += "(" + (re.sub('(l\\d+)', '"\\1"', call["property"])).replace(' ',"") + ")"
+    #   with open(mydir + "/" + fname, "w+") as reportfile:
+    #     reportfile.write(out)

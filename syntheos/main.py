@@ -179,3 +179,4 @@ def main():
   nodes = cegres(boolizer)
   print("Done. The property is %s." % ("realizable" if boolizer.realizable else "unrealizable"))
   showorsave_mealy(args, nodes, specdata)
+  reporter.dump()
