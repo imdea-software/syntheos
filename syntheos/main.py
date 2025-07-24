@@ -1,6 +1,7 @@
 import yaml
 import argparse
 import sys
+import signal
 from .config import CONFIG
 from .datatypes import *
 from .boolizer import Booleanizer, mapfetch
@@ -127,6 +128,7 @@ def parse_arguments():
   parser.add_argument('--save-mealy', nargs="?", const="", help='Save mealy machine to file', type=str, default=None)
   parser.add_argument("--show-mealy", action="store_true", help='Show mealy machine')
   parser.add_argument('--inconsistent-edges-tolerance', help='Maximum illegal edges tolerance', type=int, default=0)
+  parser.add_argument('--backend', help='Backend (strix or semml)', type=str, default="strix")
   return parser.parse_args()
 
 def initialize_boolizer(specdata):
@@ -158,8 +160,13 @@ def showorsave_mealy(args, nodes, specdata):
     dbg1("Writing mealy to " + mealyfname)
     writemealy(mealyfname, nodes, specdata)
 
+def exit_gracefully(signum, frame):
+  CONFIG.reporter.dump()
+
 def main():
   args = parse_arguments()
+  assert (args.backend in ["strix", "semml"])
+  CONFIG.backend = args.backend
   CONFIG.inconsistent_edges_tolerance = args.inconsistent_edges_tolerance
   setdbglevel(args.dbglevel)
   specdata = readfromyaml(args.yaml)
@@ -167,6 +174,8 @@ def main():
   CONFIG.reporter = reporter
   CONFIG.strixmaxsecs = args.strixmaxsecs
   boolizer = initialize_boolizer(specdata)
+  signal.signal(signal.SIGINT, exit_gracefully)
+  signal.signal(signal.SIGTERM, exit_gracefully)
   nodes = cegres(boolizer)
   print("Done. The property is %s." % ("realizable" if boolizer.realizable else "unrealizable"))
   showorsave_mealy(args, nodes, specdata)

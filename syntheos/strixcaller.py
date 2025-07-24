@@ -11,7 +11,7 @@ def callstrix(boolizer):
   dbg2("Table of literals:")
   dbg2("\n".join([l + " : " + str(f) + " (" + str(k) + ")" for [l,[f,k]] in boolizer.littable.items()]))
   strixprop = ltlt2str(ltlproperty)
-  dbg2("Strix property:")
+  dbg2("LTL property:")
   dbg2(strixprop)
   envlits = [l for l,[_,k] in boolizer.littable.items() if k == LITTY.ENV]
   envlitsstr = ",".join(envlits)
@@ -24,9 +24,15 @@ def callstrix(boolizer):
   }
   starttime = time.time()
   dbg1("Calling at " + str(datetime.datetime.fromtimestamp(starttime)))
-  dbg1("./strix -f '" + strixprop + "' --ins="+envlitsstr + " --outs="+syslitsstr + " -o hoa")
+  if CONFIG.backend == "strix":
+    dbg1("./strix -f '" + strixprop + "' --ins="+envlitsstr + " --outs="+syslitsstr + " -o hoa")
+  else:
+    dbg1("./semml -f '" + strixprop + "' --ins="+envlitsstr + " --outs="+syslitsstr)
   try:
-    strixout = subprocess.check_output(["./strix", "-f", strixprop, "--ins="+envlitsstr, "--outs="+syslitsstr, "-o", "hoa"], timeout = CONFIG.strixmaxsecs)
+    if CONFIG.backend == "strix":
+      strixout = subprocess.check_output(["./strix", "-f", strixprop, "--ins="+envlitsstr, "--outs="+syslitsstr, "-o", "hoa"], timeout = CONFIG.strixmaxsecs)
+    else:
+      strixout = subprocess.check_output(["./semml", "-f", strixprop, "--ins="+envlitsstr, "--outs="+syslitsstr], timeout = CONFIG.strixmaxsecs)
     stoptime = time.time()
     dbg1("Returned at " + str(datetime.datetime.fromtimestamp(stoptime)))
     calldata["elapsed"] = stoptime - starttime

@@ -2,6 +2,7 @@ from .boolparser import boolparse
 from .datatypes import *
 from io import StringIO
 from . import maybenotz3 as mnz3
+from .config import CONFIG
 
 def simply(cond, transtab):
   return ltlt2z3(replaceliterals(cond, transtab))
@@ -53,11 +54,12 @@ def parseprefix(txtstrm, littable):
     if line == "--BODY--":
       return noden, startnode, realizable, transtab
 
-def processEdge(line, currentnode, nodes, transtab):
+def processEdge(line, currentnode, nodes, transtab, realizable):
   condstr,outnodestr = line[1:].split("] ")
   outnoden = int(outnodestr)
   plays = boolparse(condstr)["operators"]
-  e = Edge(plays[0], plays[1], nodes[outnoden], outnoden, transtab)
+  playix = [0,1] if realizable or CONFIG.backend == "strix" else [1,0]
+  e = Edge(plays[playix[0]], plays[playix[1]], nodes[outnoden], outnoden, transtab)
   nodes[currentnode].addEdge(e)
 
 def play2str(play):
@@ -76,7 +78,7 @@ def nodes2dot(nodes):
 def parsehoa(txt, littable):
   txtstrm = StringIO(txt)
   nodenumber, startnode, realizable, transtab = parseprefix(txtstrm, littable)
-  assert(startnode == 0)
+  assert(startnode == 0 or CONFIG.backend == "semml")
   nodes = [Node(str(i)) for i in range(nodenumber)]
   for line in txtstrm:
     line = line.rstrip()
@@ -84,5 +86,5 @@ def parsehoa(txt, littable):
       line = line[7:]
       currentnode = int(line[:line.index(" ")])
     if line.startswith("["):
-      processEdge(line, currentnode, nodes, transtab)
+      processEdge(line, currentnode, nodes, transtab, realizable)
   return { "nodes": nodes, "realizable": realizable }
