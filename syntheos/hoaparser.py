@@ -42,7 +42,7 @@ def parseprefix(txtstrm, littable):
   for line in txtstrm:
     if line.startswith("AP: "):
       literals = line[line.index('"')+1:-2].split('" "')
-      transtab = {str(key):value for (key, value) in enumerate([ltlZ3(littable[l][0]) for l in literals])}
+      transtab = {str(key):value for (key, value) in enumerate([ltlZ3(littable[l][0]) if l else None for l in literals])}
     if "REALIZABLE" in line:
       realizable = not ("UNREALIZABLE" in line)
       dbg1(line)
