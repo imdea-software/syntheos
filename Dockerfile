@@ -8,8 +8,8 @@ WORKDIR /syntheos
 # 3. Copiar el código de tu proyecto
 COPY . /syntheos
 
-# 4. Instalar dependencias (usando requirements.txt)
-RUN pip install --no-cache-dir -r requirements.txt
+# 4. Instalar el paquete (dependencias declaradas en pyproject.toml)
+RUN pip install --no-cache-dir .
 
 RUN apt-get update && apt-get install -y curl tar && \
     mkdir -p /tmp/strix &&\
@@ -19,5 +19,5 @@ RUN apt-get update && apt-get install -y curl tar && \
     chmod +x /syntheos/strix && \
     rm -rf /tmp/strix*
 
-# 6. Definir punto de entrada (pasará argumentos a syntheos.py)
-ENTRYPOINT ["python", "syntheos.py"]
+# 6. Definir punto de entrada (pasará argumentos al comando syntheos instalado)
+ENTRYPOINT ["syntheos"]

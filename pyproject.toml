@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "syntheos"
+version = "0.1.0"
+description = "Realizability checking for Linear Temporal Logic with theories (LTLt)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mpmath==1.3.0",
+    "ply==3.11",
+    "PyYAML==6.0.2",
+    "sympy==1.14.0",
+    "z3-solver==4.14.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[project.scripts]
+syntheos = "syntheos.cli:main"
+syntheos-shield = "syntheos.shield.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["syntheos*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
