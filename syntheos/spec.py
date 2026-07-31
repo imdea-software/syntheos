@@ -2,28 +2,36 @@
 
 import sys
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Optional, TextIO, TypedDict
 
 import yaml
 
 from .errors import SyntheosError
+from .formula import Variable
 from .logging_utils import logger
+
+
+class MealyEdgeData(TypedDict):
+    envplay: str
+    sysplay: str
+    outnoden: int
 
 
 class SpecData(TypedDict, total=False):
     property: str
     name: str
-    variables: list
-    tmptautos: list
+    variables: list[Variable]
+    tmptautos: list[str]
     # populated later, when writing a solved specification's mealy machine:
-    transtab: dict
-    nodes: list
+    transtab: dict[str, str]
+    nodes: list[list[MealyEdgeData]]
 
 
-def readfromyaml(fname: str | None) -> SpecData:
+def readfromyaml(fname: Optional[str]) -> SpecData:
+    stream: TextIO
     if fname is None:
         logger.info("Reading YAML from stdin")
-        stream: Any = sys.stdin
+        stream = sys.stdin
         specname = "UNKNOWN"
     else:
         logger.info("Reading YAML from file")

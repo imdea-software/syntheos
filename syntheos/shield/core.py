@@ -5,37 +5,44 @@ edge out of the current game node, substitutes a legal one instead.
 """
 
 import re
+from typing import Callable, Optional, Union
 
 import yaml
 import z3
+from z3 import ArithRef, BoolRef, ExprRef, ModelRef
 
 from ..errors import SyntheosError
-from ..formula import fetchdepth, getZ3, getz3vars, z32ltlt
-from ..hoa import Edge, Node
+from ..formula import Variable, fetchdepth, getZ3, getz3vars, z32ltlt
+from ..hoa import Edge, Node, TransTab
 from ..prop_parser import boolparse
+from ..spec import SpecData
+
+# A concrete value for an environment/system variable, as read from a play's
+# JSON or written back into one.
+Value = Union[int, float, bool, str]
 
 
-def z3tycons(ty: str):
+def z3tycons(ty: Optional[str]) -> Callable[[str], ArithRef]:
     match ty:
         case "Int":
             return z3.Int
         case "Real":
             return z3.Real
         case _:
-            raise SyntheosError("Unhandled type: " + ty)
+            raise SyntheosError(f"Unhandled type: {ty}")
 
 
-def z3valcons(ty: str):
+def z3valcons(ty: Optional[str]) -> Callable[[Value], ArithRef]:
     match ty:
         case "Int":
             return z3.IntVal
         case "Real":
             return z3.RealVal
         case _:
-            raise SyntheosError("Unhandled type: " + ty)
+            raise SyntheosError(f"Unhandled type: {ty}")
 
 
-def getvalfor(ty: str):
+def getvalfor(ty: str) -> int:
     """An arbitrary placeholder value for a system variable the shield left
     unconstrained (any value works, since the game doesn't care)."""
     match ty:
@@ -44,10 +51,10 @@ def getvalfor(ty: str):
         case "Real":
             return 2345
         case _:
-            raise SyntheosError("Unhandled type: " + ty)
+            raise SyntheosError(f"Unhandled type: {ty}")
 
 
-def z3_val_to_python(val):
+def z3_val_to_python(val: ExprRef) -> Value:
     if val.sort().kind() == z3.Z3_INT_SORT:
         return val.as_long()
     elif val.sort().kind() == z3.Z3_BOOL_SORT:
@@ -58,16 +65,16 @@ def z3_val_to_python(val):
         return str(val)
 
 
-def model_to_dict(model) -> dict:
+def model_to_dict(model: ModelRef) -> dict[str, Value]:
     return {str(d): z3_val_to_python(model[d]) for d in model.decls()}
 
 
 class Shield:
-    def __init__(self, node: Node, variables: list):
+    def __init__(self, node: Node, variables: list[Variable]):
         self.node = node
         self.variables = variables
 
-    def gettypeof(self, name: str):
+    def gettypeof(self, name: str) -> Optional[str]:
         while name.startswith("FETCH_"):
             name = name[6:]
         for v in self.variables:
@@ -75,7 +82,7 @@ class Shield:
                 return v["type"]
         return None
 
-    def models(self, val: dict, expr):
+    def models(self, val: dict[str, Value], expr: BoolRef) -> Optional[dict[str, Value]]:
         """If `expr` (a play's condition) is satisfiable once every variable
         in `val` is substituted with its concrete value, return a full model
         (that substitution plus a satisfying assignment for the rest);
@@ -88,7 +95,7 @@ class Shield:
             return model_to_dict(solver.model()) | val
         return None
 
-    def protect(self, envval: dict, prsysval: dict):
+    def protect(self, envval: dict[str, Value], prsysval: dict[str, Value]) -> Optional[dict[str, Value]]:
         """Find an edge out of the current node consistent with the
         environment's actual values and (as much as possible of) the
         system's proposed values, advance the shield to that edge's target
@@ -101,19 +108,22 @@ class Shield:
             if model is not None:
                 self.node = edge.outnode
                 assignedmodel = {k: v for k, v in model.items() if k in sysvars}
-                arbitraryvals = {v["name"]: getvalfor(v["type"]) for v in self.variables if v["owner"] == "system"}
+                arbitraryvals: dict[str, Value] = {
+                    v["name"]: getvalfor(v["type"]) for v in self.variables if v["owner"] == "system"
+                }
                 return arbitraryvals | assignedmodel
         return None
 
 
-def read_mealy(mealy_fname: str):
-    """Load a Mealy machine saved by `syntheos --save-mealy`."""
+def read_mealy(mealy_fname: str) -> tuple[Shield, int, list[Node]]:
+    """Load a Mealy machine saved by `syntheos --save-mealy` (the same YAML
+    shape as a spec, with `transtab`/`nodes` filled in - see cli.writemealy)."""
     with open(mealy_fname, "r") as f:
-        mealy_data = yaml.safe_load(f.read())
+        mealy_data: SpecData = yaml.safe_load(f.read())
 
     variables = mealy_data["variables"]
     idregex = r"\b[a-zA-Z][a-zA-Z0-9_]*\b"
-    transtab = {
+    transtab: TransTab = {
         k: z32ltlt(z3.parse_smt2_string(f"(assert {v})", decls=getz3vars(re.findall(idregex, v), variables))[0])
         for k, v in mealy_data["transtab"].items()
     }
@@ -132,5 +142,5 @@ def read_mealy(mealy_fname: str):
             )
             nodes[i].addEdge(edge)
 
-    max_fetch_depth = max(fetchdepth(getZ3(v)) for v in transtab.values())
+    max_fetch_depth = max(fetchdepth(getZ3(v)) for v in transtab.values() if v is not None)
     return Shield(nodes[0], variables), max_fetch_depth, nodes

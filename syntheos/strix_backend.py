@@ -10,12 +10,13 @@ import sys
 import time
 from pathlib import Path
 
-from .boolizer import LITTY
+from .boolizer import Booleanizer, LITTY
 from .config import CONFIG
 from .errors import SyntheosError
 from .formula import ltlt2str
-from .hoa import parsehoa
+from .hoa import Node, parsehoa
 from .logging_utils import logger
+from .reporter import CallData, Reporter
 
 
 def resolve_binary(configured_path: str) -> str:
@@ -29,20 +30,20 @@ def resolve_binary(configured_path: str) -> str:
     return found or configured_path
 
 
-def callstrix(boolizer, reporter):
+def callstrix(boolizer: Booleanizer, reporter: Reporter) -> list[Node]:
     ltlproperty = boolizer.getboolformula()
     logger.debug("Table of literals:")
     logger.debug(
-        "\n".join(f"{l} : {f} ({k})" for l, [f, k] in boolizer.littable.items())
+        "\n".join(f"{l} : {f} ({k})" for l, (f, k) in boolizer.littable.items())
     )
     strixprop = ltlt2str(ltlproperty)
     logger.debug("LTL property:")
     logger.debug(strixprop)
-    envlits = [l for l, [_, k] in boolizer.littable.items() if k == LITTY.ENV]
+    envlits = [l for l, (_, k) in boolizer.littable.items() if k == LITTY.ENV]
     envlitsstr = ",".join(envlits)
-    syslits = [l for l, [_, k] in boolizer.littable.items() if k == LITTY.SYS]
+    syslits = [l for l, (_, k) in boolizer.littable.items() if k == LITTY.SYS]
     syslitsstr = ",".join(syslits)
-    calldata = {
+    calldata: CallData = {
         "property": strixprop,
         "envvars": envlits,
         "sysvars": syslits,

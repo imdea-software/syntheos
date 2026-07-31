@@ -5,24 +5,34 @@ isn't set (the default).
 
 import json
 from pathlib import Path
+from typing import Optional, TypedDict, Union
 
 from .spec import SpecData
+
+
+class CallData(TypedDict, total=False):
+    property: str
+    envvars: list[str]
+    sysvars: list[str]
+    elapsed: float
+    verdict: Union[bool, str]
 
 
 class Reporter:
     def __init__(self, specdata: SpecData, reportdir: str):
         self.specdata = specdata
         self.reportdir = reportdir
-        self.calls: list = []
-        self.currentcall: dict | None = None
+        self.calls: list[CallData] = []
+        self.currentcall: Optional[CallData] = None
 
-    def setcall(self, calldata: dict) -> None:
+    def setcall(self, calldata: CallData) -> None:
         calldata["elapsed"] = round(calldata["elapsed"], 2)
         self.currentcall = calldata
 
-    def closecall(self, verdict) -> None:
+    def closecall(self, verdict: Union[bool, str]) -> None:
         if self.reportdir == "":
             return
+        assert self.currentcall is not None, "closecall() called before setcall()"
         self.currentcall["verdict"] = verdict
         self.calls.append(self.currentcall)
 

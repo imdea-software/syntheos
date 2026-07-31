@@ -5,17 +5,21 @@ where `y(...)` refers to the previous value of a variable.
 """
 
 import re
+from typing import Optional
 
 import ply.lex as lex
 import ply.yacc as yacc
+from ply.lex import LexToken
+from ply.yacc import YaccProduction
+from z3 import ExprRef
 
 from .errors import SyntheosError
-from .formula import fetchdepth, getZ3, getz3vars, isZ3, z32ltlt
+from .formula import Formula, Variable, fetchdepth, getZ3, getz3vars, isZ3, z32ltlt
 
 # Set by ltltparse() for the duration of a parse; PLY's grammar actions below
 # are module-level functions and can't otherwise receive the spec's variable
 # list.
-variables = None
+variables: Optional[list[Variable]] = None
 
 tokens = (
     "F", "G", "X", "NEG",  # Unary operators
@@ -46,7 +50,7 @@ t_RPAREN = r"\)"
 t_ignore = " \t\n"
 
 
-def t_error(t):
+def t_error(t: LexToken) -> None:
     raise SyntheosError(f"Illegal character '{t.value[0]}'")
 
 
@@ -59,7 +63,7 @@ precedence = (
 )
 
 
-def p_expression_unary(p):
+def p_expression_unary(p: YaccProduction) -> None:
     """expression : F expression
     | G expression
     | X expression
@@ -67,7 +71,7 @@ def p_expression_unary(p):
     p[0] = {"kind": p[1], "operators": [p[2]]}
 
 
-def p_expression_binary(p):
+def p_expression_binary(p: YaccProduction) -> None:
     """expression : expression R expression
     | expression W expression
     | expression BIDIRECTIONAL expression
@@ -78,16 +82,17 @@ def p_expression_binary(p):
     p[0] = {"kind": p[2], "operators": [p[1], p[3]]}
 
 
-def p_expression_group(p):
+def p_expression_group(p: YaccProduction) -> None:
     """expression : LPAREN expression RPAREN"""
     p[0] = p[2]
 
 
-def z3parse(s: str):
+def z3parse(s: str) -> ExprRef:
     """Evaluate the `[...]` payload as a Python expression over the spec's
     Z3-typed variables, e.g. "x>y(y(x))" with x an Int becomes a Z3 formula.
     Builtins are stripped from eval's scope since only arithmetic/comparison
     syntax is ever needed here."""
+    assert variables is not None, "z3parse() called outside of ltltparse()"
     das = s[1:-1]
     idregex = r"\b[a-zA-Z][a-zA-Z0-9_]*\b"
     identifiers = re.findall(idregex, das)
@@ -95,12 +100,12 @@ def z3parse(s: str):
     return eval(das, {"__builtins__": {}}, z3vars)
 
 
-def p_expression_string(p):
+def p_expression_string(p: YaccProduction) -> None:
     """expression : STRING"""
     p[0] = z32ltlt(z3parse(p[1]))
 
 
-def p_error(p):
+def p_error(p: Optional[YaccProduction]) -> None:
     print("Syntax error in input!")
     raise SyntheosError(p)
 
@@ -108,12 +113,12 @@ def p_error(p):
 parser = yacc.yacc(debug=0)
 
 
-def checkFetchLevel(f) -> bool:
+def checkFetchLevel(f: Formula) -> bool:
     """A `y(...)`-wrapped (FETCH_) variable at nesting depth d may only
     appear inside at least d `X` operators, since it refers to a value from
     d steps ago."""
 
-    def cfl(f, level):
+    def cfl(f: Formula, level: int) -> bool:
         if isZ3(f):
             return fetchdepth(getZ3(f)) <= level
         if f["kind"] == "X":
@@ -127,15 +132,15 @@ def replace_expressions(text: str) -> str:
     """Rewrite `y(y(x))` into `FETCH_FETCH_x` before tokenizing, so nested
     fetches survive as plain identifiers."""
 
-    def replace_nested(expression):
-        while match := re.search(r"y\((.*?)\)", expression):
+    def replace_nested(expression: str) -> str:
+        while re.search(r"y\((.*?)\)", expression):
             expression = re.sub(r"y\((.*?)\)", r"FETCH_\1", expression, count=1)
         return expression
 
     return replace_nested(text)
 
 
-def ltltparse(bstr: str, variables_value: list):
+def ltltparse(bstr: str, variables_value: list[Variable]) -> Formula:
     global variables
     variables = variables_value
     bstr = replace_expressions(bstr)

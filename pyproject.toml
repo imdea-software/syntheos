@@ -19,6 +19,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "mypy>=1.10",
+    "types-PyYAML",
 ]
 
 [project.scripts]
@@ -30,3 +32,23 @@ include = ["syntheos*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["syntheos"]
+exclude = ["syntheos/parsetab\\.py"]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unreachable = true
+
+# z3, ply and sympy ship no type stubs (and are used heavily via loosely-typed
+# APIs / a deliberate `from z3 import *` re-export seam in z3_support.py) -
+# holding the rest of the codebase to strict typing while pretending these
+# are fully typed would just produce noise.
+[[tool.mypy.overrides]]
+module = ["z3", "z3.*", "ply", "ply.*", "sympy", "sympy.*"]
+ignore_missing_imports = true

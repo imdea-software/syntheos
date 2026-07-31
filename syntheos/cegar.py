@@ -23,14 +23,18 @@ fixpoint (no more edges are inconsistent) is reached.
 import logging
 import sys
 from enum import Enum, auto
+from typing import Callable, Optional, TypeVar
+
+from z3 import BoolRef, ExprRef
 
 from . import z3_support as mnz3
-from .boolizer import mapfetch
+from .boolizer import Booleanizer, mapfetch
 from .config import CONFIG
-from .formula import ltlDisj, ltlNeg, ltlt2str, z32ltlt, z3getvars
-from .hoa import nodes2dot
+from .formula import Formula, ltlDisj, ltlNeg, ltlt2str, z32ltlt, z3getvars
+from .hoa import Edge, Node, nodes2dot
 from .logging_utils import TRACE, logger
 from .refinement import refinetauto
+from .reporter import Reporter
 from .strix_backend import callstrix
 
 
@@ -40,7 +44,7 @@ class EDGEKIND(Enum):
     UNREACHABLE = auto()
 
 
-def envPlayNewThTauto(envz3):
+def envPlayNewThTauto(envz3: BoolRef) -> Optional[Formula]:
     """If the environment's move is unsatisfiable once its own variables are
     existentially quantified away, its negation is a new theory tautology."""
     z3envvars = z3getvars(envz3)
@@ -50,7 +54,7 @@ def envPlayNewThTauto(envz3):
     return None
 
 
-def sysPlayNewThTauto(envz3, sysz3, boolizer):
+def sysPlayNewThTauto(envz3: BoolRef, sysz3: BoolRef, boolizer: Booleanizer) -> Optional[Formula]:
     """If it isn't the case that, for every environment move, some system
     response exists, the system's actual response (unioned with the
     partition of environment moves where a response *is* possible) is a new
@@ -68,7 +72,7 @@ def sysPlayNewThTauto(envz3, sysz3, boolizer):
     return ltlDisj(ltlNeg(z32ltlt(sysz3)), z32ltlt(partition))
 
 
-def theoryTauto(edge, boolizer):
+def theoryTauto(edge: Edge, boolizer: Booleanizer) -> tuple[EDGEKIND, Optional[Formula]]:
     envz3 = edge.getEnvPlay()
     envtauto = envPlayNewThTauto(envz3)
     if envtauto is not None:
@@ -80,27 +84,28 @@ def theoryTauto(edge, boolizer):
     return EDGEKIND.LEGAL, None
 
 
-def thConsistent(edge, boolizer, nonewtautosallowed: bool) -> bool:
+def thConsistent(edge: Edge, boolizer: Booleanizer, nonewtautosallowed: bool) -> bool:
     edgekind, newthm = theoryTauto(edge, boolizer)
     if edgekind == EDGEKIND.ILLEGAL:
         logger.info("Found theory inconsistency")
-        newthm = refinetauto(boolizer, newthm)
-        if newthm is None:
+        assert newthm is not None
+        refined = refinetauto(boolizer, newthm)
+        if refined is None:
             logger.info("But there was no new knowledge")
             assert nonewtautosallowed
         else:
             logger.debug("Adding theorem:")
-            logger.debug(ltlt2str(newthm))
-            boolizer.addTauto(newthm)
+            logger.debug(ltlt2str(refined))
+            boolizer.addTauto(refined)
         return False
     return True
 
 
-def isFetchedVar(var) -> bool:
+def isFetchedVar(var: ExprRef) -> bool:
     return var.decl().name().startswith("FETCH_")
 
 
-def tmpConsistent(edges, boolizer, nonewtautosallowed: bool) -> bool:
+def tmpConsistent(edges: list[Edge], boolizer: Booleanizer, nonewtautosallowed: bool) -> bool:
     """`edges` is a pair of edges taken back to back. Whatever the first
     edge's system+environment play established about "now" must remain
     possible for the second edge's `y(...)`-fetched view of "then"."""
@@ -141,7 +146,15 @@ def _report_edge_progress(i: int, nodesn: int) -> None:
     sys.stdout.flush()
 
 
-def checkconsistencywith(edges: list, boolizer, consf, inconsistencies: int = 0) -> bool:
+T = TypeVar("T")
+
+
+def checkconsistencywith(
+    edges: list[T],
+    boolizer: Booleanizer,
+    consf: Callable[[T, Booleanizer, bool], bool],
+    inconsistencies: int = 0,
+) -> bool:
     """Run `consf` over every edge (or edge pair), tolerating up to
     CONFIG.inconsistent_edges_tolerance inconsistencies before giving up
     early. `inconsistencies` can be seeded by a caller sharing a counter
@@ -162,7 +175,7 @@ def checkconsistencywith(edges: list, boolizer, consf, inconsistencies: int = 0)
     return allconsistent
 
 
-def cegres(boolizer, reporter):
+def cegres(boolizer: Booleanizer, reporter: Reporter) -> list[Node]:
     """Run backend calls and consistency checks to a fixpoint, returning the
     final (consistent) game graph."""
     while True:

@@ -114,3 +114,19 @@ Strix backend and checks the realizability verdict against a recorded
 baseline (`tests/golden/baseline.json`); it's automatically skipped if the
 `strix` binary isn't present, and takes a few minutes since it runs ~60 full
 CEGAR loops.
+
+# Type checking
+
+The `syntheos` package (not `tests/`) is fully type-annotated and checked
+with mypy:
+
+```sh
+python3 -m pip install -e ".[dev]"
+python3 -m mypy
+```
+
+z3, ply and sympy ship no type stubs; `syntheos/z3_support.py` is the one
+module that imports z3 names directly (everything else reaches Z3 through
+`mnz3.X`), and z3/ply/sympy are configured as `ignore_missing_imports` in
+`pyproject.toml` so the rest of the codebase can still be held to
+`disallow_untyped_defs`.

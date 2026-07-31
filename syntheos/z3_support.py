@@ -5,36 +5,119 @@ whichever solver backs the "theories" in LTLt: everything downstream reaches
 Z3 through here (as `mnz3.X`) rather than importing z3 directly, so a
 different theory backend could in principle be dropped in by reimplementing
 this module's interface.
+
+z3 ships no type stubs, so mypy can't verify anything about these calls -
+but the names imported below (ExprRef, BoolRef, ArithRef, ...) are still the
+real z3 classes, used as honest documentation of intent even though mypy
+treats them as `Any` under the hood. `from z3 import *` would hide even that
+(mypy can't discover names exported by an unstubbed wildcard import), so
+every name actually used - internally or re-exported for callers as
+`mnz3.X` - is imported explicitly instead.
 """
 
-from z3 import *  # noqa: F401,F403 - re-exported as the theory-backend surface
+from typing import Any, Callable, Optional
+
+from z3 import (
+    And,
+    ArithRef,
+    BitVec,
+    BitVecRef,
+    Bool,
+    BoolRef,
+    BoolVal,
+    Const,
+    Exists,
+    ExprRef,
+    ForAll,
+    Implies,
+    Int,
+    IntNumRef,
+    Not,
+    Or,
+    Real,
+    Solver,
+    Tactic,
+    Z3_OP_ADD,
+    Z3_OP_EQ,
+    Z3_OP_GE,
+    Z3_OP_GT,
+    Z3_OP_LE,
+    Z3_OP_LT,
+    Z3_OP_UNINTERPRETED,
+    get_var_index,
+    is_and,
+    is_const,
+    is_eq,
+    is_false,
+    is_ge,
+    is_gt,
+    is_implies,
+    is_int_value,
+    is_le,
+    is_not,
+    is_or,
+    is_quantifier,
+    is_rational_value,
+    is_true,
+    is_var,
+    sat,
+    simplify,
+    substitute,
+    unsat,
+    z3util,
+)
 
 from .errors import SyntheosError
 
+__all__ = [
+    "And",
+    "Bool",
+    "BoolVal",
+    "Implies",
+    "Not",
+    "Or",
+    "is_false",
+    "is_true",
+    "isz3const",
+    "isz3var",
+    "quantify",
+    "make_forall",
+    "make_exists",
+    "isSat",
+    "eliminate_quantifier",
+    "getUnsatCore",
+    "makevar",
+    "rename_vars",
+    "copy_and_rename",
+    "push_negation",
+    "z32str",
+    "z32ltltw",
+]
 
-def isz3const(e) -> bool:
+
+def isz3const(e: ExprRef) -> bool:
     return not isz3var(e) and (is_int_value(e) or is_rational_value(e) or is_true(e) or is_false(e))
 
 
-def isz3var(e) -> bool:
+def isz3var(e: ExprRef) -> bool:
     return is_const(e) and e.decl().kind() == Z3_OP_UNINTERPRETED
 
 
-def quantify(quantifier, varlist, formula):
+def quantify(quantifier: Callable[[list[ExprRef], BoolRef], BoolRef], varlist: list[ExprRef], formula: BoolRef) -> BoolRef:
     if varlist:
         return quantifier(varlist, formula)
     return formula
 
 
-def make_forall(varlist, formula):
+def make_forall(varlist: list[ExprRef], formula: BoolRef) -> BoolRef:
     return quantify(ForAll, varlist, formula)
 
 
-def make_exists(varlist, formula):
+def make_exists(varlist: list[ExprRef], formula: BoolRef) -> BoolRef:
     return quantify(Exists, varlist, formula)
 
 
-def isSat(formula) -> bool:
+def isSat(formula: BoolRef) -> bool:
     formula = simplify(formula)
     solver = Solver()
     solver.add(formula)
@@ -46,11 +129,11 @@ def isSat(formula) -> bool:
     raise SyntheosError("Unknown satisfiability")
 
 
-def eliminate_quantifier(formula):
+def eliminate_quantifier(formula: BoolRef) -> BoolRef:
     return Tactic("qe2")(formula).as_expr()
 
 
-def getUnsatCore(atoms: list) -> list:
+def getUnsatCore(atoms: list[BoolRef]) -> list[BoolRef]:
     solver = Solver()
     solver.set(unsat_core=True)
     tracked = list(enumerate(atoms))
@@ -62,7 +145,7 @@ def getUnsatCore(atoms: list) -> list:
     return [atom for i, atom in tracked if Bool("atom_" + str(i)) in core]
 
 
-def makevar(var: str, ty: str):
+def makevar(var: str, ty: str) -> ArithRef:
     match ty:
         case "Int":
             cons = Int
@@ -73,11 +156,11 @@ def makevar(var: str, ty: str):
     return cons(var)
 
 
-def rename_vars(expr, renamefn):
+def rename_vars(expr: ExprRef, renamefn: Callable[[str], str]) -> ExprRef:
     return substitute(expr, [(var, Const(renamefn(var.decl().name()), var.sort())) for var in z3util.get_vars(expr)])
 
 
-def copy_and_rename(var, renamefn):
+def copy_and_rename(var: ExprRef, renamefn: Callable[[str], str]) -> ExprRef:
     new_name = renamefn(var.decl().name())
     if isinstance(var, IntNumRef) or isinstance(var, ArithRef):  # Int or Real
         return Int(new_name) if var.is_int() else Real(new_name)
@@ -89,7 +172,7 @@ def copy_and_rename(var, renamefn):
         raise TypeError("Unsupported Z3 variable type")
 
 
-def push_negation(expr):
+def push_negation(expr: BoolRef) -> BoolRef:
     """Push a top-level Not inward through comparisons/And/Or, for nicer
     printing (see z32str / play2str)."""
     if is_not(expr):
@@ -114,7 +197,7 @@ def push_negation(expr):
         return expr
 
 
-def z32str(expr, parent_op=None, bound_vars=[]):
+def z32str(expr: ExprRef, parent_op: Optional[str] = None, bound_vars: list[str] = []) -> str:
     """Human-readable rendering of a Z3 expression, used for reporting and
     for the mealy-machine dot dump."""
     if is_and(expr):
@@ -159,10 +242,17 @@ def z32str(expr, parent_op=None, bound_vars=[]):
         return str(expr)
 
 
-def z32ltltw(f, funs: dict):
+def z32ltltw(f: ExprRef, funs: dict[str, Any]) -> Any:
     """Generic Z3-expression -> LTLt-shaped-formula conversion, parametrized
     over the target formula constructors (`funs`) so both `formula.z32ltlt`
-    and callers with their own formula representation can reuse it."""
+    and callers with their own formula representation can reuse it.
+
+    `funs` and this function's return value are typed `Any` on purpose (not
+    as an easy way out): the whole point of this helper is that it doesn't
+    know or care what formula representation the caller uses, as long as
+    `funs` supplies matching negator/conjunctor/disjunctor/thwrapper/
+    constTrue/constFalse constructors for it.
+    """
     ltlNeg = funs["negator"]
     ltlConj = funs["conjunctor"]
     ltlDisj = funs["disjunctor"]
@@ -170,7 +260,7 @@ def z32ltltw(f, funs: dict):
     constTrue = funs["constTrue"]
     constFalse = funs["constFalse"]
 
-    def convert(f):
+    def convert(f: ExprRef) -> Any:
         if is_and(f):
             children = f.children()
             ret = convert(children[0])

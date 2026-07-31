@@ -8,16 +8,17 @@ tautology to learn.
 """
 
 from itertools import chain
+from typing import Iterable, Optional
 
 from sympy import And, Or, sympify
-from sympy.logic.boolalg import eliminate_implications
+from sympy.logic.boolalg import Boolean, eliminate_implications
 from sympy.logic.inference import satisfiable
 
 from . import logging_utils
-from .formula import ltl2sympy
+from .formula import Formula, ltl2sympy
 
 
-def ourdistribute(expr):
+def ourdistribute(expr: Boolean) -> Iterable[Boolean]:
     """Distribute Or-over-And one step at a time, lazily, instead of sympy's
     full `to_cnf`/`to_dnf` (which can blow up); yields the resulting
     disjuncts/conjuncts depth-first."""
@@ -35,11 +36,11 @@ def ourdistribute(expr):
     return [expr]
 
 
-def isnewknowledge(sympyknowledge, tauto) -> bool:
-    return satisfiable(~tauto & sympyknowledge)
+def isnewknowledge(sympyknowledge: Boolean, tauto: Boolean) -> bool:
+    return bool(satisfiable(~tauto & sympyknowledge))
 
 
-def getnewknowledge(booltautos: list, expr):
+def getnewknowledge(booltautos: list[Formula], expr: Boolean) -> Optional[Boolean]:
     """Find a clause of `expr` (an implication candidate, already
     boolized) that isn't already entailed by `booltautos`, or None if every
     clause is already known."""

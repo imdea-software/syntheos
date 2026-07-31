@@ -4,55 +4,73 @@ individual plays for reporting.
 """
 
 from io import StringIO
+from typing import Optional, TextIO, TypedDict
+
+from z3 import BoolRef, ExprRef
 
 from . import z3_support as mnz3
+from .boolizer import LITTY
 from .config import CONFIG
-from .formula import ltlt2z3, ltlZ3, replaceliterals
+from .formula import Formula, ltlt2z3, ltlZ3, replaceliterals
 from .logging_utils import logger
 from .prop_parser import boolparse
 
+# AP index (as it appears in HOA edge conditions, e.g. "0" in "[0&!1]") -> the
+# theory formula it stands for. An AP whose name Strix reported as empty (see
+# parseprefix) maps to None; edges never actually reference such an AP, since
+# an empty name means Strix determined the proposition was irrelevant and
+# optimized every mention of it away.
+TransTab = dict[str, Optional[Formula]]
 
-def simply(cond, transtab):
-    return ltlt2z3(replaceliterals(cond, transtab))
+LitTable = dict[str, tuple[ExprRef, LITTY]]
+
+
+class HoaInfo(TypedDict):
+    nodes: list["Node"]
+    realizable: bool
+
+
+def simply(cond: Formula, transtab: TransTab) -> BoolRef:
+    return ltlt2z3(replaceliterals(cond, transtab))  # type: ignore[arg-type]
 
 
 class Edge:
-    def __init__(self, envplay, sysplay, outnode, outnoden, transtab):
+    def __init__(self, envplay: Formula, sysplay: Formula, outnode: "Node", outnoden: int, transtab: TransTab):
         self.envplay = envplay
         self.sysplay = sysplay
-        self.envplayz3 = None
-        self.sysplayz3 = None
+        self.envplayz3: Optional[BoolRef] = None
+        self.sysplayz3: Optional[BoolRef] = None
         self.transtab = transtab
         self.outnode = outnode
         self.outnoden = outnoden
 
-    def getEnvPlay(self):
+    def getEnvPlay(self) -> BoolRef:
         if self.envplayz3 is None:
             self.envplayz3 = simply(self.envplay, self.transtab)
         return self.envplayz3
 
-    def getSysResponse(self):
+    def getSysResponse(self) -> BoolRef:
         if self.sysplayz3 is None:
             self.sysplayz3 = simply(self.sysplay, self.transtab)
         return self.sysplayz3
 
 
 class Node:
-    def __init__(self, name):
-        self.edges = []
+    def __init__(self, name: str):
+        self.edges: list[Edge] = []
         self.name = name
 
-    def addEdge(self, e):
+    def addEdge(self, e: Edge) -> None:
         self.edges.append(e)
 
 
-def parseprefix(txtstrm, littable):
+def parseprefix(txtstrm: TextIO, littable: LitTable) -> Optional[tuple[int, int, bool, TransTab]]:
     """Read the HOA header up to `--BODY--`, returning
     (state count, start state, realizable?, AP-index -> theory-formula table)."""
     noden = None
     startnode = None
     realizable = None
-    transtab = None
+    transtab: TransTab = {}
     for line in txtstrm:
         if line.startswith("AP: "):
             literals = line[line.index('"') + 1 : -2].split('" "')
@@ -69,10 +87,12 @@ def parseprefix(txtstrm, littable):
         if line.startswith("Start: "):
             startnode = int(line[7:])
         if line == "--BODY--":
+            assert noden is not None and startnode is not None and realizable is not None
             return noden, startnode, realizable, transtab
+    return None
 
 
-def processEdge(line, currentnode, nodes, transtab, realizable):
+def processEdge(line: str, currentnode: int, nodes: list[Node], transtab: TransTab, realizable: bool) -> None:
     condstr, outnodestr = line[1:].split("] ")
     outnoden = int(outnodestr)
     plays = boolparse(condstr)["operators"]
@@ -83,11 +103,11 @@ def processEdge(line, currentnode, nodes, transtab, realizable):
     nodes[currentnode].addEdge(e)
 
 
-def play2str(play) -> str:
+def play2str(play: BoolRef) -> str:
     return mnz3.z32str(mnz3.push_negation(play))
 
 
-def nodes2dot(nodes) -> str:
+def nodes2dot(nodes: list[Node]) -> str:
     lines = ["digraph {"]
     for noden, node in enumerate(nodes):
         for edge in node.edges:
@@ -100,12 +120,14 @@ def nodes2dot(nodes) -> str:
     return "\n".join(lines)
 
 
-def parsehoa(txt: str, littable: dict) -> dict:
+def parsehoa(txt: str, littable: LitTable) -> HoaInfo:
     txtstrm = StringIO(txt)
-    nodenumber, startnode, realizable, transtab = parseprefix(txtstrm, littable)
+    prefix = parseprefix(txtstrm, littable)
+    assert prefix is not None, "HOA output ended before --BODY--"
+    nodenumber, startnode, realizable, transtab = prefix
     assert startnode == 0 or CONFIG.backend == "semml"
     nodes = [Node(str(i)) for i in range(nodenumber)]
-    currentnode = None
+    currentnode = -1
     for line in txtstrm:
         line = line.rstrip()
         if line.startswith("State: "):

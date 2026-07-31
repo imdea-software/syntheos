@@ -12,19 +12,40 @@ A formula is a plain dict `{"kind": ..., "operators": [...]}`:
 This module also carries the conversions between that representation and Z3
 expressions (for calling the solver) and sympy Boolean expressions (for the
 sympy-based tautology search in `refinement.py`).
+
+Formula is deliberately just `dict[str, Any]`: its shape depends on "kind"
+(a leaf's "operators" holds a str or a raw Z3 term, an internal node's holds
+1-2 sub-formulas), which plain `dict`/`TypedDict` typing can't express
+precisely without a lot of ceremony for little real benefit here - the
+functions in this module are exactly the code that already enforces that
+shape at runtime via isBoolSym/isZ3/kind checks.
 """
 
 from functools import reduce
+from typing import Any, TypedDict, Union
 
 import sympy
+from sympy.logic.boolalg import Boolean
+from z3 import BoolRef, ExprRef
 
 from . import z3_support as mnz3
 from .errors import SyntheosError
 
-Formula = dict
+Formula = dict[str, Any]
+# A formula's "operators" holds either a literal name/raw theory term (a leaf)
+# or 1-2 sub-formulas (an internal node) - see the module docstring.
+Operand = Union[str, ExprRef, Formula]
 
 
-def fetchdepth(lit) -> int:
+class Variable(TypedDict):
+    """One entry of a spec's `variables:` list."""
+
+    name: str
+    type: str
+    owner: str
+
+
+def fetchdepth(lit: ExprRef) -> int:
     """How many `y(...)` (previous-value) wrappers deep a Z3 term is nested,
     e.g. `y(y(x))` has fetch depth 2. Composite terms take the max over their
     children."""
@@ -40,7 +61,7 @@ def fetchdepth(lit) -> int:
     return max(fetchdepth(child) for child in lit.children())
 
 
-def replaceliterals(formula: Formula, transtab: dict) -> Formula:
+def replaceliterals(formula: Formula, transtab: dict[str, Formula]) -> Formula:
     """Substitute each Boolean literal in `formula` with its theory formula
     from `transtab` (as produced by the HOA parser's AP table)."""
     if isBoolSym(formula):
@@ -56,10 +77,10 @@ def isconstant(v: str) -> bool:
     return v.lstrip("-").isdigit()
 
 
-def z3getvars(e) -> list:
+def z3getvars(e: ExprRef) -> list[ExprRef]:
     """All uninterpreted Z3 variables appearing in `e`, deduplicated."""
 
-    def getset(expr):
+    def getset(expr: ExprRef) -> set[ExprRef]:
         if mnz3.isz3var(expr):
             return {expr}
         if mnz3.isz3const(expr):
@@ -83,6 +104,7 @@ def ltlt2str(f: Formula) -> str:
         return f["kind"] + "(" + ltlt2str(f["operators"][0]) + ")"
     if len(f["operators"]) == 2:
         return "(" + ltlt2str(f["operators"][0]) + " " + f["kind"] + " " + ltlt2str(f["operators"][1]) + ")"
+    raise SyntheosError("Unhandled formula shape: " + str(f))  # unreachable: every kind has 1 or 2 operators
 
 
 def symbol(l: Formula) -> str:
@@ -90,12 +112,12 @@ def symbol(l: Formula) -> str:
     return l["operators"][0]
 
 
-def getZ3(l: Formula):
+def getZ3(l: Formula) -> ExprRef:
     assert isZ3(l)
     return l["operators"][0]
 
 
-def ltlt2z3(f: Formula):
+def ltlt2z3(f: Formula) -> BoolRef:
     """Convert a (theory-free, i.e. already-boolized where relevant) LTLt
     formula into a Z3 expression. A "Z3"-kind node still holding a temporal
     operator (e.g. produced by z32ltlt on a quantifier) is recursively
@@ -119,7 +141,7 @@ def ltlt2z3(f: Formula):
     return z3funs[f["kind"]](*(ltlt2z3(op) for op in f["operators"]))
 
 
-def getliterals(formula: Formula) -> list:
+def getliterals(formula: Formula) -> list[ExprRef]:
     """All Z3 theory atoms appearing in a (fully expanded, propositional)
     formula."""
     if isBoolSymTrue(formula) or isBoolSymFalse(formula):
@@ -147,7 +169,7 @@ def isZ3(formula: Formula) -> bool:
     return formula["kind"] == "Z3"
 
 
-def ltl2sympy(formula: Formula):
+def ltl2sympy(formula: Formula) -> Boolean:
     """Convert a purely propositional (no temporal operators, no raw Z3
     nodes) formula into a sympy Boolean expression, for `refinement.py`'s
     tautology search."""
@@ -161,7 +183,7 @@ def ltl2sympy(formula: Formula):
     return sympyfuns[formula["kind"]](*(ltl2sympy(op) for op in formula["operators"]))
 
 
-def createLTLExpr(kind: str, operators: list) -> Formula:
+def createLTLExpr(kind: str, operators: list[Operand]) -> Formula:
     return {"kind": kind, "operators": operators}
 
 
@@ -173,7 +195,7 @@ def ltlDisj(a: Formula, b: Formula) -> Formula:
     return createLTLExpr("|", [a, b])
 
 
-def ltlZ3(a) -> Formula:
+def ltlZ3(a: ExprRef) -> Formula:
     return createLTLExpr("Z3", [a])
 
 
@@ -201,7 +223,7 @@ def ltlBoolSym(a: str) -> Formula:
     return createLTLExpr("BOOLSYM", [a])
 
 
-def z32ltlt(f):
+def z32ltlt(f: ExprRef) -> Formula:
     """Convert a Z3 expression into an LTLt formula (the inverse direction of
     ltlt2z3 for the propositional connectives, plus turning arithmetic
     comparisons into Z3-wrapped atoms)."""
@@ -216,13 +238,13 @@ def z32ltlt(f):
     return mnz3.z32ltltw(f, funs)
 
 
-def getz3vars(identifiers: list, variables: list) -> dict:
+def getz3vars(identifiers: list[str], variables: list[Variable]) -> dict[str, ExprRef]:
     """Build {identifier: z3 variable} for the given identifier names, looking
     up each one's declared type in `variables` (stripping any `FETCH_`
     prefixes added for `y(...)` references first)."""
     varstable = {v["name"]: v["type"] for v in variables}
 
-    def findtype(name):
+    def findtype(name: str) -> str:
         while name.startswith("FETCH_"):
             name = name[6:]
         return varstable[name]
