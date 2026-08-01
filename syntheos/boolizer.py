@@ -6,7 +6,6 @@ guarantee/assumption tautologies discovered by the CEGAR refinement loop in
 about `y(...)`-fetched literals) added by `cegar.py`.
 """
 
-import copy
 from enum import Enum, auto
 from functools import reduce
 
@@ -17,6 +16,7 @@ from .errors import SyntheosError
 from .formula import (
     Formula,
     Variable,
+    createLTLExpr,
     fetchdepth,
     getliterals,
     getZ3,
@@ -123,9 +123,7 @@ class Booleanizer:
             raise SyntheosError("Bool symbol in full expression: " + str(formula))
         if isZ3(formula):
             return self.getliteral(getZ3(formula))
-        ret = copy.deepcopy(formula)
-        ret["operators"] = [self.boolize(op) for op in ret["operators"]]
-        return ret
+        return createLTLExpr(formula["kind"], [self.boolize(op) for op in formula["operators"]])
 
     def literalexists(self, th: ExprRef) -> bool:
         return self.mgetliteral(th) is not None

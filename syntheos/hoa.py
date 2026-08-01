@@ -35,6 +35,11 @@ def simply(cond: Formula, transtab: TransTab) -> BoolRef:
 
 
 class Edge:
+    # Game graphs are rebuilt from scratch on every CEGAR iteration and can
+    # have many edges for larger specs; slots keep each instance small and
+    # attribute access fast instead of paying for a per-instance __dict__.
+    __slots__ = ("envplay", "sysplay", "envplayz3", "sysplayz3", "transtab", "outnode", "outnoden")
+
     def __init__(self, envplay: Formula, sysplay: Formula, outnode: "Node", outnoden: int, transtab: TransTab):
         self.envplay = envplay
         self.sysplay = sysplay
@@ -56,6 +61,8 @@ class Edge:
 
 
 class Node:
+    __slots__ = ("edges", "name")
+
     def __init__(self, name: str):
         self.edges: list[Edge] = []
         self.name = name

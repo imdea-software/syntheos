@@ -114,17 +114,19 @@ def tmpConsistent(edges: list[Edge], boolizer: Booleanizer, nonewtautosallowed: 
     tpre = mapfetch(mnz3.And(e0.getSysResponse(), e0.getEnvPlay()))
     e1envplay = e1.getEnvPlay()
     e1sysplay = e1.getSysResponse()
+    e1envplayvars = z3getvars(e1envplay)
     prevars = list(
-        dict.fromkeys(z3getvars(tpre) + [v for v in (z3getvars(e1sysplay) + z3getvars(e1envplay)) if isFetchedVar(v)])
+        dict.fromkeys(z3getvars(tpre) + [v for v in (z3getvars(e1sysplay) + e1envplayvars) if isFetchedVar(v)])
     )
-    e1envvars = [v for v in z3getvars(e1envplay) if not isFetchedVar(v)]
+    e1envvars = [v for v in e1envplayvars if not isFetchedVar(v)]
     envexists = mnz3.make_exists(e1envvars, e1envplay)
     fullformula = mnz3.make_forall(prevars, mnz3.Implies(tpre, envexists))
     if mnz3.isSat(fullformula):
         return True
     logger.info("Found temporal inconsistency")
-    unfetchedvars = [var for var in z3getvars(e1envplay) if not isFetchedVar(var)]
-    fetchexpr = mnz3.eliminate_quantifier(mnz3.make_exists(unfetchedvars, e1envplay))
+    # unfetched vars existentially quantified out of e1envplay is exactly
+    # envexists (e1envvars, computed above, already is that filter)
+    fetchexpr = mnz3.eliminate_quantifier(envexists)
     renamed_expr = mnz3.rename_vars(fetchexpr, lambda x: x[6:])
     missing = boolizer.missingTautos(renamed_expr)
     if missing:
