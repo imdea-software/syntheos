@@ -15,9 +15,17 @@ every name actually used - internally or re-exported for callers as
 `mnz3.X` - is imported explicitly instead.
 """
 
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
 from z3 import (
+    Z3_OP_ADD,
+    Z3_OP_EQ,
+    Z3_OP_GE,
+    Z3_OP_GT,
+    Z3_OP_LE,
+    Z3_OP_LT,
+    Z3_OP_UNINTERPRETED,
     And,
     ArithRef,
     BitVec,
@@ -37,13 +45,6 @@ from z3 import (
     Real,
     Solver,
     Tactic,
-    Z3_OP_ADD,
-    Z3_OP_EQ,
-    Z3_OP_GE,
-    Z3_OP_GT,
-    Z3_OP_LE,
-    Z3_OP_LT,
-    Z3_OP_UNINTERPRETED,
     get_var_index,
     is_and,
     is_const,
@@ -103,7 +104,9 @@ def isz3var(e: ExprRef) -> bool:
     return is_const(e) and e.decl().kind() == Z3_OP_UNINTERPRETED
 
 
-def quantify(quantifier: Callable[[list[ExprRef], BoolRef], BoolRef], varlist: list[ExprRef], formula: BoolRef) -> BoolRef:
+def quantify(
+    quantifier: Callable[[list[ExprRef], BoolRef], BoolRef], varlist: list[ExprRef], formula: BoolRef
+) -> BoolRef:
     if varlist:
         return quantifier(varlist, formula)
     return formula
@@ -197,9 +200,11 @@ def push_negation(expr: BoolRef) -> BoolRef:
         return expr
 
 
-def z32str(expr: ExprRef, parent_op: Optional[str] = None, bound_vars: list[str] = []) -> str:
+def z32str(expr: ExprRef, parent_op: str | None = None, bound_vars: list[str] | None = None) -> str:
     """Human-readable rendering of a Z3 expression, used for reporting and
     for the mealy-machine dot dump."""
+    if bound_vars is None:
+        bound_vars = []
     if is_and(expr):
         conjunction_str = " ∧ ".join(z32str(arg, "And", bound_vars=bound_vars) for arg in expr.children())
         return f"({conjunction_str})" if parent_op != "And" and parent_op is not None else conjunction_str

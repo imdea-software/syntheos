@@ -22,15 +22,16 @@ fixpoint (no more edges are inconsistent) is reached.
 
 import logging
 import sys
+from collections.abc import Callable
 from enum import Enum, auto
-from typing import Callable, Optional, TypeVar
+from typing import TypeVar
 
 from z3 import BoolRef, ExprRef
 
 from . import z3_support as mnz3
 from .boolizer import Booleanizer, mapfetch
 from .config import CONFIG
-from .formula import Formula, ltlDisj, ltlNeg, ltlt2str, z32ltlt, z3getvars
+from .formula import Formula, ltlDisj, ltlNeg, ltlt2str, z3getvars, z32ltlt
 from .hoa import Edge, Node, nodes2dot
 from .logging_utils import TRACE, logger
 from .refinement import refinetauto
@@ -44,7 +45,7 @@ class EDGEKIND(Enum):
     UNREACHABLE = auto()
 
 
-def envPlayNewThTauto(envz3: BoolRef) -> Optional[Formula]:
+def envPlayNewThTauto(envz3: BoolRef) -> Formula | None:
     """If the environment's move is unsatisfiable once its own variables are
     existentially quantified away, its negation is a new theory tautology."""
     z3envvars = z3getvars(envz3)
@@ -54,7 +55,7 @@ def envPlayNewThTauto(envz3: BoolRef) -> Optional[Formula]:
     return None
 
 
-def sysPlayNewThTauto(envz3: BoolRef, sysz3: BoolRef, boolizer: Booleanizer) -> Optional[Formula]:
+def sysPlayNewThTauto(envz3: BoolRef, sysz3: BoolRef, boolizer: Booleanizer) -> Formula | None:
     """If it isn't the case that, for every environment move, some system
     response exists, the system's actual response (unioned with the
     partition of environment moves where a response *is* possible) is a new
@@ -72,7 +73,7 @@ def sysPlayNewThTauto(envz3: BoolRef, sysz3: BoolRef, boolizer: Booleanizer) -> 
     return ltlDisj(ltlNeg(z32ltlt(sysz3)), z32ltlt(partition))
 
 
-def theoryTauto(edge: Edge, boolizer: Booleanizer) -> tuple[EDGEKIND, Optional[Formula]]:
+def theoryTauto(edge: Edge, boolizer: Booleanizer) -> tuple[EDGEKIND, Formula | None]:
     envz3 = edge.getEnvPlay()
     envtauto = envPlayNewThTauto(envz3)
     if envtauto is not None:
@@ -114,10 +115,7 @@ def tmpConsistent(edges: list[Edge], boolizer: Booleanizer, nonewtautosallowed: 
     e1envplay = e1.getEnvPlay()
     e1sysplay = e1.getSysResponse()
     prevars = list(
-        dict.fromkeys(
-            z3getvars(tpre)
-            + [v for v in (z3getvars(e1sysplay) + z3getvars(e1envplay)) if isFetchedVar(v)]
-        )
+        dict.fromkeys(z3getvars(tpre) + [v for v in (z3getvars(e1sysplay) + z3getvars(e1envplay)) if isFetchedVar(v)])
     )
     e1envvars = [v for v in z3getvars(e1envplay) if not isFetchedVar(v)]
     envexists = mnz3.make_exists(e1envvars, e1envplay)
@@ -183,12 +181,7 @@ def cegres(boolizer: Booleanizer, reporter: Reporter) -> list[Node]:
         if logger.isEnabledFor(TRACE):
             print(nodes2dot(nodes))
         edges = [edge for node in nodes for edge in node.edges]
-        consedges = [
-            [edge, consedge]
-            for node in nodes
-            for edge in node.edges
-            for consedge in edge.outnode.edges
-        ]
+        consedges = [[edge, consedge] for node in nodes for edge in node.edges for consedge in edge.outnode.edges]
         if checkconsistencywith(edges, boolizer, thConsistent) and (
             boolizer.maxfetchdepth == 0
             or boolizer.realizable

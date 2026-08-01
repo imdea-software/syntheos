@@ -4,6 +4,7 @@ parsetab.py
 strix
 semml
 .pytest_cache
+.ruff_cache
 *.egg-info
 build
 dist

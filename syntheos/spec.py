@@ -2,7 +2,7 @@
 
 import sys
 from pathlib import Path
-from typing import Optional, TextIO, TypedDict
+from typing import TextIO, TypedDict
 
 import yaml
 
@@ -27,7 +27,7 @@ class SpecData(TypedDict, total=False):
     nodes: list[list[MealyEdgeData]]
 
 
-def readfromyaml(fname: Optional[str]) -> SpecData:
+def readfromyaml(fname: str | None) -> SpecData:
     stream: TextIO
     if fname is None:
         logger.info("Reading YAML from stdin")

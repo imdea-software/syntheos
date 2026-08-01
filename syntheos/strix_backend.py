@@ -10,7 +10,7 @@ import sys
 import time
 from pathlib import Path
 
-from .boolizer import Booleanizer, LITTY
+from .boolizer import LITTY, Booleanizer
 from .config import CONFIG
 from .errors import SyntheosError
 from .formula import ltlt2str
@@ -33,9 +33,7 @@ def resolve_binary(configured_path: str) -> str:
 def callstrix(boolizer: Booleanizer, reporter: Reporter) -> list[Node]:
     ltlproperty = boolizer.getboolformula()
     logger.debug("Table of literals:")
-    logger.debug(
-        "\n".join(f"{l} : {f} ({k})" for l, (f, k) in boolizer.littable.items())
-    )
+    logger.debug("\n".join(f"{l} : {f} ({k})" for l, (f, k) in boolizer.littable.items()))
     strixprop = ltlt2str(ltlproperty)
     logger.debug("LTL property:")
     logger.debug(strixprop)

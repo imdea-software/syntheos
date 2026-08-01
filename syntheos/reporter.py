@@ -5,7 +5,7 @@ isn't set (the default).
 
 import json
 from pathlib import Path
-from typing import Optional, TypedDict, Union
+from typing import TypedDict
 
 from .spec import SpecData
 
@@ -15,7 +15,7 @@ class CallData(TypedDict, total=False):
     envvars: list[str]
     sysvars: list[str]
     elapsed: float
-    verdict: Union[bool, str]
+    verdict: bool | str
 
 
 class Reporter:
@@ -23,13 +23,13 @@ class Reporter:
         self.specdata = specdata
         self.reportdir = reportdir
         self.calls: list[CallData] = []
-        self.currentcall: Optional[CallData] = None
+        self.currentcall: CallData | None = None
 
     def setcall(self, calldata: CallData) -> None:
         calldata["elapsed"] = round(calldata["elapsed"], 2)
         self.currentcall = calldata
 
-    def closecall(self, verdict: Union[bool, str]) -> None:
+    def closecall(self, verdict: bool | str) -> None:
         if self.reportdir == "":
             return
         assert self.currentcall is not None, "closecall() called before setcall()"

@@ -1,6 +1,6 @@
 import z3
 
-from syntheos.boolizer import Booleanizer, LITTY, mapfetch, makeconj
+from syntheos.boolizer import LITTY, Booleanizer, makeconj, mapfetch
 from syntheos.formula import isBoolSym, ltlBoolSym, ltlConj, ltlG, ltlZ3
 
 VARIABLES = [

@@ -7,7 +7,6 @@ import argparse
 import signal
 import sys
 from types import FrameType
-from typing import Optional
 
 import yaml
 
@@ -28,7 +27,7 @@ from .spec import SpecData, readfromyaml
 sys.setrecursionlimit(10000)
 
 
-def parse_arguments(argv: Optional[list[str]] = None) -> argparse.Namespace:
+def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser("LTL fetch")
     parser.add_argument("--yaml", help="YAML with specification", type=str, default=None)
     parser.add_argument("--dbglevel", help="Debug level", type=int, default=0)
@@ -37,7 +36,9 @@ def parse_arguments(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument("--save-mealy", nargs="?", const="", help="Save mealy machine to file", type=str, default=None)
     parser.add_argument("--show-mealy", action="store_true", help="Show mealy machine")
     parser.add_argument("--inconsistent-edges-tolerance", help="Maximum illegal edges tolerance", type=int, default=0)
-    parser.add_argument("--backend", help="Backend (strix or semml)", type=str, default="strix", choices=["strix", "semml"])
+    parser.add_argument(
+        "--backend", help="Backend (strix or semml)", type=str, default="strix", choices=["strix", "semml"]
+    )
     parser.add_argument("--strix-bin", help="Path to the strix binary", type=str, default="./strix")
     parser.add_argument("--semml-bin", help="Path to the semml script", type=str, default="./semml")
     return parser.parse_args(argv)
@@ -64,9 +65,7 @@ def writemealy(mealyfname: str, nodes: list[Node], specdata: SpecData) -> None:
     # AP indices Strix reported with an empty name map to None (see hoa.py's
     # TransTab) - such an AP is never referenced by any edge, so it's
     # dropped here rather than crashing on getZ3(None).
-    specdata["transtab"] = {
-        k: getZ3(v).sexpr() for k, v in nodes[0].edges[0].transtab.items() if v is not None
-    }
+    specdata["transtab"] = {k: getZ3(v).sexpr() for k, v in nodes[0].edges[0].transtab.items() if v is not None}
     specdata["nodes"] = [
         [
             {"envplay": ltlt2str(edge.envplay), "sysplay": ltlt2str(edge.sysplay), "outnoden": edge.outnoden}
@@ -88,7 +87,7 @@ def showorsave_mealy(args: argparse.Namespace, nodes: list[Node], specdata: Spec
         writemealy(mealyfname, nodes, specdata)
 
 
-def main(argv: Optional[list[str]] = None) -> None:
+def main(argv: list[str] | None = None) -> None:
     args = parse_arguments(argv)
     CONFIG.backend = args.backend
     CONFIG.inconsistent_edges_tolerance = args.inconsistent_edges_tolerance
@@ -101,7 +100,7 @@ def main(argv: Optional[list[str]] = None) -> None:
         specdata = readfromyaml(args.yaml)
         reporter = Reporter(specdata, args.reportdir)
 
-        def exit_gracefully(signum: int, frame: Optional[FrameType]) -> None:
+        def exit_gracefully(signum: int, frame: FrameType | None) -> None:
             reporter.dump()
 
         signal.signal(signal.SIGINT, exit_gracefully)

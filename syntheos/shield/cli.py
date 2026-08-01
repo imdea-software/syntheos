@@ -7,7 +7,6 @@ import argparse
 import json
 import sys
 from collections import deque
-from typing import Optional
 
 from .. import logging_utils
 from ..errors import SyntheosError
@@ -19,7 +18,7 @@ def keep_var(v: str, n: int) -> bool:
     return not v.startswith("FETCH_" * n)
 
 
-def parse_arguments(argv: Optional[list[str]] = None) -> argparse.Namespace:
+def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Mealy shield")
     parser.add_argument("--mealy", help="File with Mealy machine", type=str, required=True)
     parser.add_argument("--show-mealy", action="store_true", help="Show mealy machine")
@@ -50,7 +49,7 @@ def process_plays(shield: Shield, max_fetch_depth: int) -> None:
         prev_plays.append(full_play)
 
 
-def main(argv: Optional[list[str]] = None) -> None:
+def main(argv: list[str] | None = None) -> None:
     args = parse_arguments(argv)
     logging_utils.configure_logging(args.dbglevel)
     try:

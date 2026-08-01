@@ -22,7 +22,7 @@ shape at runtime via isBoolSym/isZ3/kind checks.
 """
 
 from functools import reduce
-from typing import Any, TypedDict, Union
+from typing import Any, TypeAlias, TypedDict
 
 import sympy
 from sympy.logic.boolalg import Boolean
@@ -34,7 +34,7 @@ from .errors import SyntheosError
 Formula = dict[str, Any]
 # A formula's "operators" holds either a literal name/raw theory term (a leaf)
 # or 1-2 sub-formulas (an internal node) - see the module docstring.
-Operand = Union[str, ExprRef, Formula]
+Operand: TypeAlias = str | ExprRef | Formula
 
 
 class Variable(TypedDict):

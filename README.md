@@ -130,3 +130,22 @@ module that imports z3 names directly (everything else reaches Z3 through
 `mnz3.X`), and z3/ply/sympy are configured as `ignore_missing_imports` in
 `pyproject.toml` so the rest of the codebase can still be held to
 `disallow_untyped_defs`.
+
+# Linting and formatting
+
+[Ruff](https://docs.astral.sh/ruff/) covers both linting (replacing
+flake8/isort/pyupgrade/flake8-bugbear/flake8-comprehensions) and formatting
+(replacing Black):
+
+```sh
+python3 -m pip install -e ".[dev]"
+python3 -m ruff check .      # lint
+python3 -m ruff format .     # format
+```
+
+Ruff also enforces modern syntax (pyupgrade), including `X | None`/`X | Y`
+union syntax over `Optional[X]`/`Union[X, Y]`.
+
+Config lives in `pyproject.toml`. Two pyupgrade rules (UP007, UP045) are
+disabled because this codebase spells out `Optional[X]`/`Union[X, Y]` rather
+than `X | None`/`X | Y`.

@@ -3,8 +3,6 @@ HOA edge conditions (e.g. `[0&!1]`) and in saved Mealy-machine YAML (e.g.
 `l0&!l1`). Built with PLY, mirroring `ltl_parser.py`'s approach.
 """
 
-from typing import Optional
-
 import ply.lex as lex
 import ply.yacc as yacc
 from ply.lex import LexToken
@@ -28,7 +26,7 @@ t_ignore = " "
 
 
 def t_error(t: LexToken) -> None:
-    raise SyntheosError("Illegal character '%s'" % t.value[0])
+    raise SyntheosError(f"Illegal character '{t.value[0]}'")
 
 
 lexer = lex.lex()
@@ -69,9 +67,9 @@ def p_expression_number(p: YaccProduction) -> None:
     p[0] = p[1]
 
 
-def p_error(p: Optional[YaccProduction]) -> None:
+def p_error(p: YaccProduction | None) -> None:
     if p:
-        print("Syntax error at '%s'" % p.value)
+        print(f"Syntax error at '{p.value}'")
     else:
         print("Syntax error at EOF")
 

@@ -5,7 +5,7 @@ edge out of the current game node, substitutes a legal one instead.
 """
 
 import re
-from typing import Callable, Optional, Union
+from collections.abc import Callable
 
 import yaml
 import z3
@@ -19,10 +19,10 @@ from ..spec import SpecData
 
 # A concrete value for an environment/system variable, as read from a play's
 # JSON or written back into one.
-Value = Union[int, float, bool, str]
+Value = int | float | bool | str
 
 
-def z3tycons(ty: Optional[str]) -> Callable[[str], ArithRef]:
+def z3tycons(ty: str | None) -> Callable[[str], ArithRef]:
     match ty:
         case "Int":
             return z3.Int
@@ -32,7 +32,7 @@ def z3tycons(ty: Optional[str]) -> Callable[[str], ArithRef]:
             raise SyntheosError(f"Unhandled type: {ty}")
 
 
-def z3valcons(ty: Optional[str]) -> Callable[[Value], ArithRef]:
+def z3valcons(ty: str | None) -> Callable[[Value], ArithRef]:
     match ty:
         case "Int":
             return z3.IntVal
@@ -74,7 +74,7 @@ class Shield:
         self.node = node
         self.variables = variables
 
-    def gettypeof(self, name: str) -> Optional[str]:
+    def gettypeof(self, name: str) -> str | None:
         while name.startswith("FETCH_"):
             name = name[6:]
         for v in self.variables:
@@ -82,7 +82,7 @@ class Shield:
                 return v["type"]
         return None
 
-    def models(self, val: dict[str, Value], expr: BoolRef) -> Optional[dict[str, Value]]:
+    def models(self, val: dict[str, Value], expr: BoolRef) -> dict[str, Value] | None:
         """If `expr` (a play's condition) is satisfiable once every variable
         in `val` is substituted with its concrete value, return a full model
         (that substitution plus a satisfying assignment for the rest);
@@ -95,7 +95,7 @@ class Shield:
             return model_to_dict(solver.model()) | val
         return None
 
-    def protect(self, envval: dict[str, Value], prsysval: dict[str, Value]) -> Optional[dict[str, Value]]:
+    def protect(self, envval: dict[str, Value], prsysval: dict[str, Value]) -> dict[str, Value] | None:
         """Find an edge out of the current node consistent with the
         environment's actual values and (as much as possible of) the
         system's proposed values, advance the shield to that edge's target
@@ -118,7 +118,7 @@ class Shield:
 def read_mealy(mealy_fname: str) -> tuple[Shield, int, list[Node]]:
     """Load a Mealy machine saved by `syntheos --save-mealy` (the same YAML
     shape as a spec, with `transtab`/`nodes` filled in - see cli.writemealy)."""
-    with open(mealy_fname, "r") as f:
+    with open(mealy_fname) as f:
         mealy_data: SpecData = yaml.safe_load(f.read())
 
     variables = mealy_data["variables"]

@@ -4,7 +4,6 @@ unsat core so only the atoms that actually matter get remembered.
 """
 
 from functools import reduce
-from typing import Optional
 
 from sympy import And, Not, Or, false, true
 from sympy.logic.boolalg import Boolean
@@ -20,8 +19,8 @@ from .formula import (
     ltlConj,
     ltlDisj,
     ltlNeg,
-    ltlZ3,
     ltlt2z3,
+    ltlZ3,
     replaceliterals,
     z32ltlt,
 )
@@ -47,7 +46,7 @@ def sympy2ltl(e: Boolean) -> Formula:
     raise SyntheosError("Unhandled case:" + str(e))
 
 
-def refinetauto(boolizer: Booleanizer, ltlform: Formula) -> Optional[Formula]:
+def refinetauto(boolizer: Booleanizer, ltlform: Formula) -> Formula | None:
     """Given a formula the CEGAR loop found to be a theory tautology
     (`ltlform`, e.g. `!envplay | sysplay`), search for a new Boolean
     tautology it implies that isn't already known, and return its minimal

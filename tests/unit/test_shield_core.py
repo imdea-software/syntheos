@@ -1,10 +1,9 @@
+import pytest
 import z3
 
 from syntheos.errors import SyntheosError
 from syntheos.formula import ltlBoolSym, ltlZ3
 from syntheos.hoa import Edge, Node
-import pytest
-
 from syntheos.shield.core import (
     Shield,
     getvalfor,
@@ -94,7 +93,7 @@ def test_type_helpers_int_and_real():
 def test_z3_val_to_python_and_model_to_dict():
     solver = z3.Solver()
     x, r, b = z3.Int("x"), z3.Real("r"), z3.Bool("b")
-    solver.add(x == 3, r == 1.5, b == True)
+    solver.add(x == 3, r == 1.5, b)
     assert solver.check() == z3.sat
     model = solver.model()
     result = model_to_dict(model)

@@ -4,7 +4,7 @@ individual plays for reporting.
 """
 
 from io import StringIO
-from typing import Optional, TextIO, TypedDict
+from typing import TextIO, TypedDict
 
 from z3 import BoolRef, ExprRef
 
@@ -20,7 +20,7 @@ from .prop_parser import boolparse
 # parseprefix) maps to None; edges never actually reference such an AP, since
 # an empty name means Strix determined the proposition was irrelevant and
 # optimized every mention of it away.
-TransTab = dict[str, Optional[Formula]]
+TransTab = dict[str, Formula | None]
 
 LitTable = dict[str, tuple[ExprRef, LITTY]]
 
@@ -38,8 +38,8 @@ class Edge:
     def __init__(self, envplay: Formula, sysplay: Formula, outnode: "Node", outnoden: int, transtab: TransTab):
         self.envplay = envplay
         self.sysplay = sysplay
-        self.envplayz3: Optional[BoolRef] = None
-        self.sysplayz3: Optional[BoolRef] = None
+        self.envplayz3: BoolRef | None = None
+        self.sysplayz3: BoolRef | None = None
         self.transtab = transtab
         self.outnode = outnode
         self.outnoden = outnoden
@@ -64,7 +64,7 @@ class Node:
         self.edges.append(e)
 
 
-def parseprefix(txtstrm: TextIO, littable: LitTable) -> Optional[tuple[int, int, bool, TransTab]]:
+def parseprefix(txtstrm: TextIO, littable: LitTable) -> tuple[int, int, bool, TransTab] | None:
     """Read the HOA header up to `--BODY--`, returning
     (state count, start state, realizable?, AP-index -> theory-formula table)."""
     noden = None
@@ -74,10 +74,7 @@ def parseprefix(txtstrm: TextIO, littable: LitTable) -> Optional[tuple[int, int,
     for line in txtstrm:
         if line.startswith("AP: "):
             literals = line[line.index('"') + 1 : -2].split('" "')
-            transtab = {
-                str(key): (ltlZ3(littable[l][0]) if l else None)
-                for key, l in enumerate(literals)
-            }
+            transtab = {str(key): (ltlZ3(littable[l][0]) if l else None) for key, l in enumerate(literals)}
         if "REALIZABLE" in line:
             realizable = "UNREALIZABLE" not in line
             logger.info(line)
@@ -112,9 +109,15 @@ def nodes2dot(nodes: list[Node]) -> str:
     for noden, node in enumerate(nodes):
         for edge in node.edges:
             lines.append(
-                "    " + str(noden) + " -> " + edge.outnode.name
-                + '[label="When\\n' + play2str(edge.getEnvPlay()) + "\\nthen:\\n"
-                + play2str(edge.getSysResponse()) + '"];'
+                "    "
+                + str(noden)
+                + " -> "
+                + edge.outnode.name
+                + '[label="When\\n'
+                + play2str(edge.getEnvPlay())
+                + "\\nthen:\\n"
+                + play2str(edge.getSysResponse())
+                + '"];'
             )
     lines.append("}")
     return "\n".join(lines)

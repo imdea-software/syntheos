@@ -7,8 +7,8 @@ that is not yet implied by current knowledge - that clause becomes the new
 tautology to learn.
 """
 
+from collections.abc import Iterable
 from itertools import chain
-from typing import Iterable, Optional
 
 from sympy import And, Or, sympify
 from sympy.logic.boolalg import Boolean, eliminate_implications
@@ -40,7 +40,7 @@ def isnewknowledge(sympyknowledge: Boolean, tauto: Boolean) -> bool:
     return bool(satisfiable(~tauto & sympyknowledge))
 
 
-def getnewknowledge(booltautos: list[Formula], expr: Boolean) -> Optional[Boolean]:
+def getnewknowledge(booltautos: list[Formula], expr: Boolean) -> Boolean | None:
     """Find a clause of `expr` (an implication candidate, already
     boolized) that isn't already entailed by `booltautos`, or None if every
     clause is already known."""

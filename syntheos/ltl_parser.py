@@ -5,7 +5,6 @@ where `y(...)` refers to the previous value of a variable.
 """
 
 import re
-from typing import Optional
 
 import ply.lex as lex
 import ply.yacc as yacc
@@ -19,14 +18,22 @@ from .formula import Formula, Variable, fetchdepth, getZ3, getz3vars, isZ3, z32l
 # Set by ltltparse() for the duration of a parse; PLY's grammar actions below
 # are module-level functions and can't otherwise receive the spec's variable
 # list.
-variables: Optional[list[Variable]] = None
+variables: list[Variable] | None = None
 
 tokens = (
-    "F", "G", "X", "NEG",  # Unary operators
-    "W", "R", "BIDIRECTIONAL", "IMPLIES",  # Binary operators
-    "OR", "AND",
+    "F",
+    "G",
+    "X",
+    "NEG",  # Unary operators
+    "W",
+    "R",
+    "BIDIRECTIONAL",
+    "IMPLIES",  # Binary operators
+    "OR",
+    "AND",
     "STRING",  # Leaves
-    "LPAREN", "RPAREN",  # Parentheses for grouping
+    "LPAREN",
+    "RPAREN",  # Parentheses for grouping
 )
 
 t_NEG = r"!"
@@ -105,7 +112,7 @@ def p_expression_string(p: YaccProduction) -> None:
     p[0] = z32ltlt(z3parse(p[1]))
 
 
-def p_error(p: Optional[YaccProduction]) -> None:
+def p_error(p: YaccProduction | None) -> None:
     print("Syntax error in input!")
     raise SyntheosError(p)
 

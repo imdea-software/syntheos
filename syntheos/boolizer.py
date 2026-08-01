@@ -9,7 +9,6 @@ about `y(...)`-fetched literals) added by `cegar.py`.
 import copy
 from enum import Enum, auto
 from functools import reduce
-from typing import Optional
 
 from z3 import ExprRef
 
@@ -19,8 +18,8 @@ from .formula import (
     Formula,
     Variable,
     fetchdepth,
-    getZ3,
     getliterals,
+    getZ3,
     isBoolSym,
     isBoolSymFalse,
     isBoolSymTrue,
@@ -30,10 +29,10 @@ from .formula import (
     ltlG,
     ltlIff,
     ltlImplies,
-    ltlX,
     ltlt2z3,
-    z32ltlt,
+    ltlX,
     z3getvars,
+    z32ltlt,
 )
 
 
@@ -56,7 +55,7 @@ def mapfetch(lit: ExprRef) -> ExprRef:
     return lit.decl()(*(mapfetch(arg) for arg in lit.children()))
 
 
-def makeconj(formulas: list[Formula]) -> Optional[Formula]:
+def makeconj(formulas: list[Formula]) -> Formula | None:
     if len(formulas) == 0:
         return None
     return reduce(ltlConj, formulas)
@@ -70,8 +69,8 @@ class Booleanizer:
         self.assumptions: list[Formula] = []
         self.fetchtautos: list[Formula] = []
         self.booltautos: list[Formula] = []
-        self.formula: Optional[Formula] = None
-        self.realizable: Optional[bool] = None
+        self.formula: Formula | None = None
+        self.realizable: bool | None = None
         self.maxfetchdepth: int = 0
 
     def isSysVar(self, v: str) -> bool:
@@ -131,7 +130,7 @@ class Booleanizer:
     def literalexists(self, th: ExprRef) -> bool:
         return self.mgetliteral(th) is not None
 
-    def mgetliteral(self, th: ExprRef) -> Optional[Formula]:
+    def mgetliteral(self, th: ExprRef) -> Formula | None:
         assert not mnz3.is_true(th)
         assert not mnz3.is_false(th)
         for name, (f, _kind) in self.littable.items():
