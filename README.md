@@ -15,8 +15,8 @@ changes to the source take effect immediately) into a virtual environment:
  python3 -m pip install -e .
 ```
 
-This installs the `syntheos` and `syntheos-shield` console commands, along with
-the pinned dependencies declared in `pyproject.toml`.
+This installs the `syntheos` console command, along with the pinned
+dependencies declared in `pyproject.toml`.
 
 Additionally, ensure that the [Strix](https://strix.model.in.tum.de/) tool is in the same folder as Syntheos, as it is required for execution (or pass `--strix-bin <path>` / put `strix` on your `PATH`).
 
@@ -88,18 +88,7 @@ podman run --platform linux/amd64 -i syntheos < spec.yaml
 ```
 
 # Running a shield from the controller
-You can execute a controller that interprets the mealy machine that has been saved with `--save-mealy controller.yaml` with the `syntheos-shield` command (or `python shield.py` if you haven't installed the package).
-
-```sh
-syntheos-shield --mealy controller.yaml
-```
-This controller will read lines from stdin, where each line is a list of two elements.
-
-The first element is a dictionary that maps each input variable to a concrete value. This represents the values provided by the environment at a specific time step.
-
-The second element is a dictionary that maps output variables to proposed values determined by the system. This entry can contain only a subset of the system variables, indicating that the rest can be any value that the controller finds suitable.
-
-If the proposed output values do not constitute a valid system response, the shield will provide a safe move to play instead.
+The runtime shield that interprets a mealy machine saved with `--save-mealy controller.yaml` has moved out into its own standalone package - see [shield/](shield/).
 
 # Running the test suite
 

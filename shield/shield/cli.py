@@ -1,6 +1,6 @@
-"""The `syntheos-shield` command: read environment/proposed-system plays from
-stdin (one JSON `[env_play, sys_play]` pair per line) and print the safe
-system response to play instead, one JSON object per line.
+"""The `shield` command: read environment/proposed-system plays from stdin
+(one JSON `[env_play, sys_play]` pair per line) and print the safe system
+response to play instead, one JSON object per line.
 """
 
 import argparse
@@ -8,10 +8,10 @@ import json
 import sys
 from collections import deque
 
-from .. import logging_utils
-from ..errors import SyntheosError
-from ..hoa import nodes2dot
+from . import logging_utils
 from .core import Shield, Value, read_mealy
+from .errors import ShieldError
+from .hoa import nodes2dot
 
 
 def keep_var(v: str, n: int) -> bool:
@@ -58,7 +58,7 @@ def main(argv: list[str] | None = None) -> None:
             print("Mealy machine:")
             print(nodes2dot(nodes))
         process_plays(shield, max_fetch_depth)
-    except SyntheosError as exc:
+    except ShieldError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         raise SystemExit(1) from exc
 

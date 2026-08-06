@@ -1,10 +1,7 @@
 import pytest
 import z3
 
-from syntheos.errors import SyntheosError
-from syntheos.formula import ltlBoolSym, ltlZ3
-from syntheos.hoa import Edge, Node
-from syntheos.shield.core import (
+from shield.core import (
     Shield,
     getvalfor,
     model_to_dict,
@@ -12,6 +9,9 @@ from syntheos.shield.core import (
     z3tycons,
     z3valcons,
 )
+from shield.errors import ShieldError
+from shield.formula import ltlBoolSym, ltlZ3
+from shield.hoa import Edge, Node
 
 VARIABLES = [
     {"name": "e", "type": "Int", "owner": "environment"},
@@ -73,11 +73,11 @@ def test_gettypeof_strips_fetch_prefix():
 
 
 def test_type_helpers_reject_unsupported_types():
-    with pytest.raises(SyntheosError):
+    with pytest.raises(ShieldError):
         z3tycons("Bool")
-    with pytest.raises(SyntheosError):
+    with pytest.raises(ShieldError):
         z3valcons("Bool")
-    with pytest.raises(SyntheosError):
+    with pytest.raises(ShieldError):
         getvalfor("Bool")
 
 

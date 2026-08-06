@@ -6,20 +6,35 @@ edge out of the current game node, substitutes a legal one instead.
 
 import re
 from collections.abc import Callable
+from typing import TypedDict
 
 import yaml
 import z3
 from z3 import ArithRef, BoolRef, ExprRef, ModelRef
 
-from ..errors import SyntheosError
-from ..formula import Variable, fetchdepth, getZ3, getz3vars, z32ltlt
-from ..hoa import Edge, Node, TransTab
-from ..prop_parser import boolparse
-from ..spec import SpecData
+from .errors import ShieldError
+from .formula import Variable, fetchdepth, getZ3, getz3vars, z32ltlt
+from .hoa import Edge, Node, TransTab
+from .prop_parser import boolparse
 
 # A concrete value for an environment/system variable, as read from a play's
 # JSON or written back into one.
 Value = int | float | bool | str
+
+
+class MealyEdgeData(TypedDict):
+    envplay: str
+    sysplay: str
+    outnoden: int
+
+
+class MealyData(TypedDict):
+    """The shape of a mealy machine saved by `syntheos --save-mealy` (the
+    same YAML shape as a spec, with `transtab`/`nodes` filled in)."""
+
+    variables: list[Variable]
+    transtab: dict[str, str]
+    nodes: list[list[MealyEdgeData]]
 
 
 def z3tycons(ty: str | None) -> Callable[[str], ArithRef]:
@@ -29,7 +44,7 @@ def z3tycons(ty: str | None) -> Callable[[str], ArithRef]:
         case "Real":
             return z3.Real
         case _:
-            raise SyntheosError(f"Unhandled type: {ty}")
+            raise ShieldError(f"Unhandled type: {ty}")
 
 
 def z3valcons(ty: str | None) -> Callable[[Value], ArithRef]:
@@ -39,7 +54,7 @@ def z3valcons(ty: str | None) -> Callable[[Value], ArithRef]:
         case "Real":
             return z3.RealVal
         case _:
-            raise SyntheosError(f"Unhandled type: {ty}")
+            raise ShieldError(f"Unhandled type: {ty}")
 
 
 def getvalfor(ty: str) -> int:
@@ -51,7 +66,7 @@ def getvalfor(ty: str) -> int:
         case "Real":
             return 2345
         case _:
-            raise SyntheosError(f"Unhandled type: {ty}")
+            raise ShieldError(f"Unhandled type: {ty}")
 
 
 def z3_val_to_python(val: ExprRef) -> Value:
@@ -119,7 +134,7 @@ def read_mealy(mealy_fname: str) -> tuple[Shield, int, list[Node]]:
     """Load a Mealy machine saved by `syntheos --save-mealy` (the same YAML
     shape as a spec, with `transtab`/`nodes` filled in - see cli.writemealy)."""
     with open(mealy_fname) as f:
-        mealy_data: SpecData = yaml.safe_load(f.read())
+        mealy_data: MealyData = yaml.safe_load(f.read())
 
     variables = mealy_data["variables"]
     idregex = r"\b[a-zA-Z][a-zA-Z0-9_]*\b"
