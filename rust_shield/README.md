@@ -14,8 +14,12 @@ cargo run --release -- --mealy path/to/mealy.yaml < plays.jsonl
 
 ## Development
 
-Needs [Rust](https://rustup.rs) and Z3 (`brew install z3` on macOS - see
-`.cargo/config.toml` for how the build finds it).
+Needs [Rust](https://rustup.rs) and Z3. On macOS: `brew install z3`, then run
+`./setup-z3.sh` once to generate `.cargo/config.toml` (machine-specific -
+depends on where Homebrew put things - so it's gitignored, not committed).
+On Linux, installing your distro's Z3 dev package (e.g. `apt install
+libz3-dev`) is normally enough on its own, since it lands on the compiler's
+default search path.
 
 ```
 cargo build
