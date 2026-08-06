@@ -1,0 +1,8 @@
+# Z3 is installed via Homebrew (`brew install z3`), not vendored by the `z3`
+# crate: point the build at Homebrew's headers (for bindgen) and lib (for the
+# linker) so `cargo build`/`run`/`test` work with no extra env vars.
+[env]
+Z3_SYS_Z3_HEADER = "/opt/homebrew/opt/z3/include/z3.h"
+
+[target.aarch64-apple-darwin]
+rustflags = ["-L", "/opt/homebrew/opt/z3/lib"]
