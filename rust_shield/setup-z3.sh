@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
-# Generates .cargo/config.toml for this machine. Needed because the paths
-# to Z3's header and library are machine-specific (they depend on where
-# Homebrew put them - /opt/homebrew on Apple Silicon, /usr/local on Intel
-# Macs) and Cargo has no way to compute that automatically: the z3-sys
-# crate's build script reads Z3_SYS_Z3_HEADER from the real environment,
-# and one crate's build script can't hand an env var to another crate's
-# build script - so the path has to land in .cargo/config.toml (or your
-# shell) before cargo ever runs, not be computed by our own build.rs.
+# Generates .cargo/config.toml with Z3_SYS_Z3_HEADER for this machine.
 #
-# Run this once after cloning. Safe to re-run (e.g. after moving the repo
-# or upgrading Homebrew).
+# This is the one part of finding Z3 that build.rs can't do itself: the
+# z3-sys crate's build script reads Z3_SYS_Z3_HEADER from the real process
+# environment, and Cargo has no way for one crate's build script to hand an
+# env var to a *different* crate's build script - so this has to be set
+# before cargo even starts, via .cargo/config.toml (or your shell). The
+# linker search path doesn't have this problem - build.rs sets that
+# automatically on every build, see build.rs for why.
+#
+# Run this once after cloning. Safe to re-run (e.g. after upgrading
+# Homebrew).
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 if ! command -v brew >/dev/null || ! prefix="$(brew --prefix z3 2>/dev/null)"; then
     echo "Homebrew z3 not found - skipping .cargo/config.toml."
     echo "On Linux, 'apt install libz3-dev' (or your distro's equivalent) puts"
-    echo "z3.h and libz3 on the compiler's default search path, so no config"
-    echo "is needed there. If your setup is different, build will fail with"
-    echo "'z3.h' file not found or 'library z3 not found' - set Z3_SYS_Z3_HEADER"
-    echo "and add a linker -L path yourself."
+    echo "z3.h on the compiler's default search path, so no config is needed"
+    echo "there. If your setup is different, build will fail with a bindgen"
+    echo "'z3.h' file not found error - set Z3_SYS_Z3_HEADER yourself."
     exit 0
 fi
 
@@ -29,9 +29,6 @@ cat > .cargo/config.toml <<EOF
 # ($prefix). Re-run that script if this ever goes stale.
 [env]
 Z3_SYS_Z3_HEADER = "$prefix/include/z3.h"
-
-[target.'cfg(target_os = "macos")']
-rustflags = ["-L", "$prefix/lib"]
 EOF
 
 echo "Wrote .cargo/config.toml for Homebrew z3 at $prefix"

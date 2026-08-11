@@ -21,6 +21,15 @@ On Linux, installing your distro's Z3 dev package (e.g. `apt install
 libz3-dev`) is normally enough on its own, since it lands on the compiler's
 default search path.
 
+(Finding Z3 is split across two places for a reason: `build.rs` computes the
+*linker* path automatically on every build - this crate is the final binary,
+so its own build script can just tell the linker where to look. The *header*
+path can't be done that way: it's read by a different crate's (`z3-sys`)
+build script, and Cargo has no channel for one crate's build script to hand
+an env var to another's - so that one has to already be sitting in
+`.cargo/config.toml` before `cargo build` even starts, which is what
+`setup-z3.sh` is for.)
+
 ```
 cargo build
 cargo test
@@ -39,6 +48,7 @@ cargo test
   each step ask Z3 for an edge (and a concrete system response) consistent
   with what actually happened.
 - `value.rs`, `error.rs` - small shared types.
+- `build.rs` - points the linker at Homebrew's Z3, when present.
 
 Solving is delegated to [Z3](https://github.com/Z3Prover/z3) via the `z3`
 crate rather than reimplemented, so the rest of the code above can stay
